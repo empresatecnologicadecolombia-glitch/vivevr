@@ -27,7 +27,6 @@ const Navbar = () => {
     { label: "VR", action: () => handleNavigate("/vr") },
     { label: "LOBBY", action: () => handleNavigate("/lobby") },
     { label: "SALAS", action: () => handleNavigate("/nuestras-salas") },
-    { label: "EDUCACIÓN", action: () => handleNavigate("/educacion") },
     { label: "TIENDA", action: () => handleNavigate("/tienda") },
   ];
 

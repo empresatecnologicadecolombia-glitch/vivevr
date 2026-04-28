@@ -88,12 +88,12 @@ const storeCategories: {
   },
   {
     id: "cursos",
-    title: "Cursos",
-    subtitle: "Ofertas especiales de formación.",
+    title: "Educación Inmersiva",
+    subtitle: "Programas y cursos especializados en una sola categoría.",
     icon: GraduationCap,
     image:
       "https://images.unsplash.com/photo-1523240795612-9a054b0db644?auto=format&fit=crop&w=1400&q=80",
-    tags: ["Formación", "Packs", "Universo"],
+    tags: ["Formación", "Cursos", "Inmersivo"],
     products: [
       { title: "Ventas Relámpago", description: "Curso técnico-comercial para cerrar más rápido.", detail: "Duración: 3 horas", price: "$5 USD", image: "https://images.unsplash.com/photo-1556740749-887f6717d7e4?auto=format&fit=crop&w=1200&q=80" },
       { title: "Embudo Express", description: "Diseña funnels de conversión en una tarde.", detail: "Duración: 2 horas", price: "$2 USD", image: "https://images.unsplash.com/photo-1551281044-8d8d0d86f5b0?auto=format&fit=crop&w=1200&q=80" },

@@ -10,24 +10,22 @@ type StarPosition = { x: number; y: number; z: number };
 
 const Lobby3DPage = () => {
   const navigate = useNavigate();
+  const handleVideoInteraction = useCallback((videoId: "maicolVideo" | "paseoVideo", clickCount: number) => {
+    const video = document.getElementById(videoId) as HTMLVideoElement | null;
+    if (!video) return;
 
-  const handleToggleMaicolPlayback = useCallback(() => {
-    const maicolVideo = document.getElementById("maicolVideo") as HTMLVideoElement | null;
-    if (!maicolVideo) return;
-    if (maicolVideo.paused) {
-      void maicolVideo.play();
+    if (clickCount >= 2) {
+      video.muted = !video.muted;
+      if (video.paused) void video.play();
       return;
     }
-    maicolVideo.pause();
-  }, []);
 
-  const handleToggleMaicolAudio = useCallback(() => {
-    const maicolVideo = document.getElementById("maicolVideo") as HTMLVideoElement | null;
-    if (!maicolVideo) return;
-    maicolVideo.muted = !maicolVideo.muted;
-    if (maicolVideo.paused) {
-      void maicolVideo.play();
+    if (video.paused) {
+      void video.play();
+      return;
     }
+
+    video.pause();
   }, []);
 
   const stars = useMemo<StarPosition[]>(() => {
@@ -51,29 +49,13 @@ const Lobby3DPage = () => {
       >
         Salir
       </button>
-      <div className="absolute left-4 top-4 z-20 flex gap-2">
-        <button
-          type="button"
-          onClick={handleToggleMaicolPlayback}
-          className="rounded-full border border-white/35 bg-black/60 px-3 py-1.5 text-xs font-semibold tracking-wide text-white backdrop-blur-sm transition hover:bg-black/80"
-        >
-          Play/Pausa Maicol
-        </button>
-        <button
-          type="button"
-          onClick={handleToggleMaicolAudio}
-          className="rounded-full border border-white/35 bg-black/60 px-3 py-1.5 text-xs font-semibold tracking-wide text-white backdrop-blur-sm transition hover:bg-black/80"
-        >
-          Audio Maicol
-        </button>
-      </div>
 
       <a-scene
         renderer="antialias: false; precision: mediump; colorManagement: true; physicallyCorrectLights: true; toneMapping: ACESFilmic; exposure: 1.2; powerPreference: high-performance"
         vr-mode-ui="enabled: true"
         loading-screen="enabled: false"
         embedded={false}
-        style={{ width: "100vw", height: "100vh" }}
+        style={{ width: "100vw", height: "100vh", cursor: "default" }}
       >
         <a-assets timeout="3000">
           <img id="lobbyFloor" src={FLOOR_TEXTURE_URL} alt="textura de piso de madera" />
@@ -86,6 +68,8 @@ const Lobby3DPage = () => {
             wasd-controls="acceleration: 40"
             touch-controls
             look-controls="touchEnabled: true; magicWindowTrackingEnabled: true"
+            cursor="rayOrigin: mouse; fuse: false; mouseCursorStylesEnabled: true"
+            raycaster="objects: .interactive-video"
           />
         </a-entity>
 
@@ -185,8 +169,25 @@ const Lobby3DPage = () => {
         {/* Corridor rhythm with simple door openings */}
         <a-box position="0 10 20" width="14" height="20" depth="0.6" material="color: #f6f1e4; roughness: 0.55" />
         <a-box position="0 10 -20" width="14" height="20" depth="0.6" material="color: #f6f1e4; roughness: 0.55" />
-        <a-video src="#maicolVideo" position="0 10.2 19.62" width="9.84" height="5.52" material="shader: flat" />
-        <a-video src="#paseoVideo" position="0 10.2 -19.62" rotation="0 180 0" width="8.2" height="4.6" material="shader: flat" />
+        <a-video
+          className="interactive-video"
+          src="#maicolVideo"
+          position="0 10.2 19.62"
+          width="9.84"
+          height="5.52"
+          material="shader: flat"
+          onClick={(event: MouseEvent) => handleVideoInteraction("maicolVideo", event.detail)}
+        />
+        <a-video
+          className="interactive-video"
+          src="#paseoVideo"
+          position="0 10.2 -19.62"
+          rotation="0 180 0"
+          width="8.2"
+          height="4.6"
+          material="shader: flat"
+          onClick={(event: MouseEvent) => handleVideoInteraction("paseoVideo", event.detail)}
+        />
 
         {stars.map((star, index) => (
           <a-sphere
