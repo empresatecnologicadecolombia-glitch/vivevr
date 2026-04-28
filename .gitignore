@@ -27,3 +27,5 @@ public/videos/*.mp4
 *.njsproj
 *.sln
 *.sw?
+
+.vercel
