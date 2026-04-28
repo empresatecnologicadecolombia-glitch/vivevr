@@ -142,14 +142,23 @@
 
 #mirror-body.sbs-active .sbs-panels {
   display: flex;
-  width: 100%;
+  width: calc(100vw - 2.2rem);
+  height: calc(100dvh - 2.2rem);
+  margin: 1.1rem auto;
+  background: #000000;
+  overflow: hidden;
 }
 
 #mirror-body.sbs-active .sbs-panel {
-  width: 50vw;
-  max-width: 50vw;
-  height: 100dvh;
+  width: 50%;
+  max-width: 50%;
+  height: 100%;
   overflow-y: auto;
+}
+
+#mirror-body.sbs-active {
+  min-height: 100dvh;
+  background: #000000;
 }
 
 .vr-probe-button {
@@ -157,16 +166,25 @@
   right: 1rem;
   bottom: 1rem;
   z-index: 9999;
-  border: 1px solid hsl(var(--primary) / 0.5);
-  background: hsl(var(--card) / 0.78);
-  color: hsl(var(--foreground));
+  border: 1px solid hsl(var(--primary) / 0.55);
+  background:
+    radial-gradient(circle at 20% 20%, hsl(var(--primary) / 0.22), transparent 55%),
+    linear-gradient(145deg, hsl(var(--card) / 0.9), hsl(var(--card) / 0.68));
+  color: hsl(var(--foreground) / 0.98);
   border-radius: 999px;
-  padding: 0.6rem 1rem;
+  min-height: 2.8rem;
+  padding: 0.7rem 1.1rem;
   font-family: "Space Grotesk", sans-serif;
-  font-size: 0.75rem;
+  font-size: 0.72rem;
   font-weight: 700;
-  letter-spacing: 0.08em;
-  backdrop-filter: blur(10px);
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+  backdrop-filter: blur(14px);
+  box-shadow:
+    0 0 0 1px hsl(var(--primary) / 0.16) inset,
+    0 10px 28px -18px hsl(var(--primary) / 0.95),
+    0 0 28px -20px hsl(var(--primary) / 0.8);
+  transition: transform 220ms ease, box-shadow 240ms ease, border-color 240ms ease, background 240ms ease;
 }
 
 .fullscreen-button {
@@ -174,14 +192,53 @@
   left: 1rem;
   bottom: 1rem;
   z-index: 9999;
-  border: 1px solid hsl(var(--primary) / 0.5);
-  background: hsl(var(--card) / 0.78);
-  color: hsl(var(--foreground));
+  border: 1px solid hsl(var(--secondary) / 0.5);
+  background:
+    radial-gradient(circle at 80% 20%, hsl(var(--secondary) / 0.24), transparent 58%),
+    linear-gradient(145deg, hsl(var(--card) / 0.9), hsl(var(--card) / 0.68));
+  color: hsl(var(--foreground) / 0.98);
   border-radius: 999px;
-  padding: 0.6rem 1rem;
+  min-height: 2.8rem;
+  padding: 0.7rem 1.1rem;
   font-family: "Space Grotesk", sans-serif;
-  font-size: 0.75rem;
+  font-size: 0.72rem;
   font-weight: 700;
-  letter-spacing: 0.08em;
-  backdrop-filter: blur(10px);
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+  backdrop-filter: blur(14px);
+  box-shadow:
+    0 0 0 1px hsl(var(--secondary) / 0.15) inset,
+    0 10px 28px -18px hsl(var(--secondary) / 0.95),
+    0 0 28px -20px hsl(var(--secondary) / 0.75);
+  transition: transform 220ms ease, box-shadow 240ms ease, border-color 240ms ease, background 240ms ease;
+}
+
+.vr-probe-button:hover,
+.fullscreen-button:hover {
+  transform: translateY(-2px) scale(1.01);
+}
+
+.vr-probe-button:hover {
+  border-color: hsl(var(--primary) / 0.75);
+  box-shadow:
+    0 0 0 1px hsl(var(--primary) / 0.25) inset,
+    0 16px 34px -18px hsl(var(--primary) / 1),
+    0 0 34px -18px hsl(var(--primary) / 0.95);
+}
+
+.fullscreen-button:hover {
+  border-color: hsl(var(--secondary) / 0.72);
+  box-shadow:
+    0 0 0 1px hsl(var(--secondary) / 0.22) inset,
+    0 16px 34px -18px hsl(var(--secondary) / 1),
+    0 0 34px -18px hsl(var(--secondary) / 0.9);
+}
+
+.vr-probe-button:focus-visible,
+.fullscreen-button:focus-visible {
+  outline: none;
+  box-shadow:
+    0 0 0 2px hsl(var(--background)),
+    0 0 0 4px hsl(var(--primary) / 0.55),
+    0 0 28px -14px hsl(var(--primary) / 0.9);
 }
