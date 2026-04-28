@@ -168,3 +168,20 @@
   letter-spacing: 0.08em;
   backdrop-filter: blur(10px);
 }
+
+.fullscreen-button {
+  position: fixed;
+  left: 1rem;
+  bottom: 1rem;
+  z-index: 9999;
+  border: 1px solid hsl(var(--primary) / 0.5);
+  background: hsl(var(--card) / 0.78);
+  color: hsl(var(--foreground));
+  border-radius: 999px;
+  padding: 0.6rem 1rem;
+  font-family: "Space Grotesk", sans-serif;
+  font-size: 0.75rem;
+  font-weight: 700;
+  letter-spacing: 0.08em;
+  backdrop-filter: blur(10px);
+}

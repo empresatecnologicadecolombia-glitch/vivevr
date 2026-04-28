@@ -5,6 +5,16 @@ import "./index.css";
 
 function MirrorSbsRoot() {
   const [vrMode, setVrMode] = useState(false);
+  const [isFullscreen, setIsFullscreen] = useState(false);
+
+  const toggleFullscreen = () => {
+    const root = document.documentElement;
+    if (!document.fullscreenElement) {
+      void root.requestFullscreen().catch(() => undefined);
+      return;
+    }
+    void document.exitFullscreen().catch(() => undefined);
+  };
 
   useEffect(() => {
     const { pushState, replaceState } = window.history;
@@ -23,6 +33,15 @@ function MirrorSbsRoot() {
       window.history.pushState = pushState;
       window.history.replaceState = replaceState;
     };
+  }, []);
+
+  useEffect(() => {
+    const onFullscreenChange = () => {
+      setIsFullscreen(Boolean(document.fullscreenElement));
+    };
+    document.addEventListener("fullscreenchange", onFullscreenChange);
+    onFullscreenChange();
+    return () => document.removeEventListener("fullscreenchange", onFullscreenChange);
   }, []);
 
   useEffect(() => {
@@ -201,6 +220,13 @@ function MirrorSbsRoot() {
         onClick={() => setVrMode((prev) => !prev)}
       >
         {vrMode ? "SALIR MODO VR" : "PROBAR MODO VR"}
+      </button>
+      <button
+        type="button"
+        className="fullscreen-button"
+        onClick={toggleFullscreen}
+      >
+        {isFullscreen ? "SALIR FULLSCREEN" : "FULLSCREEN"}
       </button>
 
       <div className="sbs-panels">
