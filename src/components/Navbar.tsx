@@ -25,7 +25,6 @@ const Navbar = () => {
   const navItems = [
     { label: "INICIO", action: () => handleNavigate("/inicio") },
     { label: "VR", action: () => handleNavigate("/vr") },
-    { label: "LOBBY", action: () => handleNavigate("/lobby") },
     { label: "SALAS", action: () => handleNavigate("/nuestras-salas") },
     { label: "TIENDA", action: () => handleNavigate("/tienda") },
   ];

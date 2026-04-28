@@ -18,6 +18,7 @@ declare global {
       "a-sphere": AFrameElementProps;
       "a-cylinder": AFrameElementProps;
       "a-cone": AFrameElementProps;
+      "a-torus": AFrameElementProps;
       "a-video": AFrameElementProps;
     }
   }

@@ -20,7 +20,6 @@ import InicioPage from "./pages/InicioPage.tsx";
 import NuestrasSalasPage from "./pages/NuestrasSalasPage.tsx";
 import VrPage from "./pages/VrPage.tsx";
 import EducacionPage from "./pages/EducacionPage.tsx";
-import Lobby3DPage from "./pages/Lobby3DPage.tsx";
 import NotFound from "./pages/NotFound.tsx";
 
 const queryClient = new QueryClient();
@@ -39,7 +38,6 @@ const App = () => (
             <Route path="/nuestras-salas" element={<NuestrasSalasPage />} />
             <Route path="/educacion" element={<EducacionPage />} />
             <Route path="/vr" element={<VrPage />} />
-            <Route path="/lobby" element={<Lobby3DPage />} />
             <Route path="/event/:id" element={<EventPage />} />
             <Route path="/auth" element={<AuthPage />} />
             <Route path="/tienda" element={<TiendaPage />} />
