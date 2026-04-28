@@ -1,6 +1,5 @@
 import Navbar from "@/components/Navbar";
 import MiMundoVRSection from "@/components/MiMundoVRSection";
-import Footer from "@/components/Footer";
 
 /** Vista dedicada: Mi Mundo VR (dos esferas Perfil / Público). Solo accesible desde el botón INICIO. */
 const InicioPage = () => {
@@ -10,7 +9,6 @@ const InicioPage = () => {
       <main className="pt-16">
         <MiMundoVRSection />
       </main>
-      <Footer />
     </div>
   );
 };

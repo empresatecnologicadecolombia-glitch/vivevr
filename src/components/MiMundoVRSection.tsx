@@ -29,11 +29,15 @@ const STADIUM_PANORAMA_URL =
 /** Luna: textura ligera + parametros de orbita. */
 const MOON_TEXTURE_URL = `${PLANETS}/moon_1024.jpg`;
 const MOON_RADIUS = CENTRAL_SPHERE_RADIUS * 0.27;
-const MOON_ORBIT_RADIUS = CENTRAL_SPHERE_RADIUS * 2.6;
+const MOON_ORBIT_RADIUS = CENTRAL_SPHERE_RADIUS * 1.95;
 const MOON_ORBIT_SPEED = 0.22;
 const EARTH_ROTATION_SPEED = 0.08;
-const FREE_MATCH_VIDEO_URL = "/CASAPARLANTE_ BEÉLE.mp4";
-const SECOND_MATCH_VIDEO_URL = "/videos/colombia-argentina-resumen.mp4";
+const FREE_MATCH_VIDEO_URL =
+  (import.meta.env.VITE_FREE_MATCH_VIDEO_URL as string | undefined)?.trim() || "/CASAPARLANTE_ BEÉLE.mp4";
+const SECOND_MATCH_VIDEO_URL =
+  (import.meta.env.VITE_SECOND_MATCH_VIDEO_URL as string | undefined)?.trim() || "/videos/colombia-argentina-resumen.mp4";
+const WINDOWS11_DESKTOP_URL =
+  "https://images.unsplash.com/photo-1633419461186-7d40a38105ec?auto=format&fit=crop&w=1600&q=80";
 
 type ScreenRefs = {
   main: React.RefObject<THREE.Mesh>;
@@ -63,6 +67,7 @@ function MoonScreenCluster({ visible, screenRefs }: { visible: boolean; screenRe
   const clusterRef = useRef<THREE.Group>(null);
   const [mainVideo] = useState(() => createVideoTexture(FREE_MATCH_VIDEO_URL));
   const [secondVideo] = useState(() => createVideoTexture(SECOND_MATCH_VIDEO_URL));
+  const systemTexture = useLoader(THREE.TextureLoader, WINDOWS11_DESKTOP_URL);
 
   const socialTexture = useMemo(() => {
     const canvas = document.createElement("canvas");
@@ -70,63 +75,101 @@ function MoonScreenCluster({ visible, screenRefs }: { visible: boolean; screenRe
     canvas.height = 512;
     const ctx = canvas.getContext("2d");
     if (!ctx) return null;
-    ctx.fillStyle = "#050914";
+    const bg = ctx.createLinearGradient(0, 0, canvas.width, canvas.height);
+    bg.addColorStop(0, "rgba(18,34,55,0.95)");
+    bg.addColorStop(1, "rgba(9,18,30,0.95)");
+    ctx.fillStyle = bg;
     ctx.fillRect(0, 0, canvas.width, canvas.height);
-    ctx.strokeStyle = "rgba(115, 220, 255, 0.5)";
-    ctx.lineWidth = 6;
-    ctx.strokeRect(10, 10, canvas.width - 20, canvas.height - 20);
-    ctx.font = "700 56px Arial";
-    ctx.fillStyle = "#d3ebff";
-    ctx.fillText("SOCIAL HUB", 38, 82);
+
+    ctx.strokeStyle = "rgba(168, 232, 255, 0.6)";
+    ctx.lineWidth = 5;
+    ctx.strokeRect(16, 16, canvas.width - 32, canvas.height - 32);
+
+    ctx.fillStyle = "rgba(210, 244, 255, 0.22)";
+    ctx.fillRect(28, 32, canvas.width - 56, 68);
+
+    ctx.font = "700 44px Arial";
+    ctx.fillStyle = "#dbf4ff";
+    ctx.fillText("SOCIAL GLASS", 44, 78);
+
     const items = [
-      { label: "f", color: "#1877f2", x: 140 },
-      { label: "wa", color: "#25D366", x: 350 },
-      { label: "ig", color: "#E4405F", x: 560 },
-      { label: "tt", color: "#ffffff", x: 770 },
+      {
+        label: "Facebook",
+        color: "#1877f2",
+        x: 70,
+        y: 150,
+        iconUrl: "https://cdn.simpleicons.org/facebook/ffffff",
+      },
+      {
+        label: "WhatsApp",
+        color: "#25D366",
+        x: 350,
+        y: 150,
+        iconUrl: "https://cdn.simpleicons.org/whatsapp/ffffff",
+      },
+      {
+        label: "Instagram",
+        color: "#E4405F",
+        x: 630,
+        y: 150,
+        iconUrl: "https://cdn.simpleicons.org/instagram/ffffff",
+      },
+      {
+        label: "Spotify",
+        color: "#1ED760",
+        x: 210,
+        y: 296,
+        iconUrl: "https://cdn.simpleicons.org/spotify/ffffff",
+      },
+      {
+        label: "TikTok",
+        color: "#00f2ea",
+        x: 490,
+        y: 296,
+        iconUrl: "https://cdn.simpleicons.org/tiktok/ffffff",
+      },
     ];
-    items.forEach((item) => {
-      ctx.fillStyle = item.color;
-      ctx.beginPath();
-      ctx.roundRect(item.x - 60, 170, 120, 120, 24);
-      ctx.fill();
-      ctx.fillStyle = "#09101d";
-      ctx.font = "700 38px Arial";
-      ctx.fillText(item.label.toUpperCase(), item.x - 34, 245);
-    });
+
     const texture = new THREE.CanvasTexture(canvas);
     texture.colorSpace = THREE.SRGBColorSpace;
+
+    const drawItem = (item: (typeof items)[number]) => {
+      ctx.fillStyle = "rgba(240, 250, 255, 0.14)";
+      ctx.beginPath();
+      ctx.roundRect(item.x, item.y, 250, 110, 22);
+      ctx.fill();
+      ctx.strokeStyle = `${item.color}cc`;
+      ctx.lineWidth = 3;
+      ctx.stroke();
+      ctx.fillStyle = item.color;
+      ctx.font = "700 28px Arial";
+      ctx.fillText(item.label, item.x + 82, item.y + 66);
+    };
+
+    items.forEach(drawItem);
+
+    // Cargar iconos oficiales y pintar encima de cada tarjeta.
+    items.forEach((item) => {
+      const img = new Image();
+      img.crossOrigin = "anonymous";
+      img.onload = () => {
+        ctx.fillStyle = `${item.color}cc`;
+        ctx.beginPath();
+        ctx.roundRect(item.x + 16, item.y + 16, 50, 50, 12);
+        ctx.fill();
+        ctx.drawImage(img, item.x + 25, item.y + 25, 32, 32);
+        texture.needsUpdate = true;
+      };
+      img.src = item.iconUrl;
+    });
+
     return texture;
   }, []);
 
-  const systemTexture = useMemo(() => {
-    const canvas = document.createElement("canvas");
-    canvas.width = 1200;
-    canvas.height = 700;
-    const ctx = canvas.getContext("2d");
-    if (!ctx) return null;
-    ctx.fillStyle = "#07111f";
-    ctx.fillRect(0, 0, canvas.width, canvas.height);
-    ctx.fillStyle = "#0d1d34";
-    ctx.fillRect(0, 0, canvas.width, 72);
-    ctx.fillStyle = "#9ac4ff";
-    ctx.font = "600 30px Segoe UI";
-    ctx.fillText("Windows Space Control", 26, 46);
-    ctx.fillStyle = "#102641";
-    ctx.fillRect(34, 108, 760, 520);
-    ctx.fillStyle = "#17365f";
-    ctx.fillRect(830, 108, 336, 252);
-    ctx.fillRect(830, 376, 336, 252);
-    ctx.fillStyle = "#8fe0ff";
-    ctx.font = "500 24px Segoe UI";
-    ctx.fillText("Live telemetry", 860, 152);
-    ctx.fillText("System map", 860, 420);
-    ctx.strokeStyle = "rgba(165, 240, 255, 0.7)";
-    ctx.lineWidth = 3;
-    ctx.strokeRect(34, 108, 760, 520);
-    const texture = new THREE.CanvasTexture(canvas);
-    texture.colorSpace = THREE.SRGBColorSpace;
-    return texture;
-  }, []);
+  useEffect(() => {
+    systemTexture.colorSpace = THREE.SRGBColorSpace;
+    systemTexture.anisotropy = 8;
+  }, [systemTexture]);
 
   useEffect(() => {
     const tryPlay = (video: HTMLVideoElement | null) => {
@@ -181,19 +224,19 @@ function MoonScreenCluster({ visible, screenRefs }: { visible: boolean; screenRe
     <group ref={clusterRef}>
       <mesh
         ref={screenRefs.main}
-        position={[0, 0.18, 1.2]}
+        position={[0, 0.18, 1.35]}
         renderOrder={6}
         onPointerDown={(event) => {
           event.stopPropagation();
           enableAudioFor(mainVideo.video);
         }}
       >
-        <planeGeometry args={[1.8, 1.02]} />
+        <planeGeometry args={[1.45, 0.86]} />
         <meshBasicMaterial map={mainVideo.texture ?? undefined} toneMapped={false} side={THREE.DoubleSide} />
       </mesh>
       <mesh
         ref={screenRefs.second}
-        position={[0, 0.2, -1.55]}
+        position={[0, 0.18, -1.35]}
         rotation={[0, Math.PI, 0]}
         renderOrder={6}
         onPointerDown={(event) => {
@@ -201,14 +244,19 @@ function MoonScreenCluster({ visible, screenRefs }: { visible: boolean; screenRe
           enableAudioFor(secondVideo.video);
         }}
       >
-        <planeGeometry args={[1.35, 0.82]} />
+        <planeGeometry args={[1.45, 0.86]} />
         <meshBasicMaterial map={secondVideo.texture ?? undefined} toneMapped={false} side={THREE.DoubleSide} />
       </mesh>
-      <mesh ref={screenRefs.social} position={[-1.25, 0.12, 0.2]} rotation={[0, Math.PI / 2.6, 0]} renderOrder={6}>
-        <planeGeometry args={[1.35, 0.82]} />
+      <mesh ref={screenRefs.social} position={[-1.35, 0.18, 0]} rotation={[0, -Math.PI / 2, 0]} renderOrder={6}>
+        <planeGeometry args={[1.45, 0.86]} />
         <meshBasicMaterial map={socialTexture ?? undefined} toneMapped={false} side={THREE.DoubleSide} />
       </mesh>
-      <mesh ref={screenRefs.system} position={[1.25, 0.2, 0.25]} rotation={[0, -Math.PI / 2.6, 0]} renderOrder={6}>
+      <mesh
+        ref={screenRefs.system}
+        position={[1.35, 0.18, 0]}
+        rotation={[0, Math.PI / 2, 0]}
+        renderOrder={6}
+      >
         <planeGeometry args={[1.5, 0.9]} />
         <meshBasicMaterial map={systemTexture ?? undefined} toneMapped={false} side={THREE.DoubleSide} />
       </mesh>
@@ -621,13 +669,15 @@ const MiMundoVRSection = () => {
           {roomMode === "equirect_interior" ? (
             <>
               <hemisphereLight args={["#fce8f4", "#181018"]} intensity={0.52} />
-              <ambientLight intensity={0.12} color="#fff8fc" />
+              <ambientLight intensity={0.34} color="#fff8fc" />
               <directionalLight position={[5, 7, 4]} intensity={1.58} color="#fff5f8" />
+              <directionalLight position={[-5, -7, -4]} intensity={1.1} color="#fff5f8" />
             </>
           ) : (
             <>
-              <ambientLight intensity={0.14} />
+              <ambientLight intensity={0.36} />
               <directionalLight position={[6, 2.5, 2]} intensity={2.02} color="#eef3fb" />
+              <directionalLight position={[-6, -2.5, -2]} intensity={1.18} color="#eef3fb" />
             </>
           )}
 
@@ -686,15 +736,6 @@ const MiMundoVRSection = () => {
         )}
         </div>
       </div>
-
-      <button
-        type="button"
-        onClick={() => setGlassesMode((prev) => !prev)}
-        className="absolute bottom-4 right-4 z-20 rounded-full border border-primary/40 bg-black/60 px-4 py-2.5 text-sm font-display font-semibold text-primary shadow-lg backdrop-blur-md transition hover:bg-black/80 hover:border-primary/60"
-        aria-pressed={glassesMode}
-      >
-        Modo Gafas
-      </button>
 
       {isMobile && (
         <button
