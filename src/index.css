@@ -124,3 +124,47 @@
       0 0 35px -14px hsl(190 100% 60% / 0.8);
   }
 }
+
+#mirror-body {
+  min-height: 100dvh;
+}
+
+.sbs-panels {
+  display: block;
+  width: 100%;
+}
+
+.sbs-panel {
+  width: 100%;
+  min-height: 100dvh;
+  overflow-x: hidden;
+}
+
+#mirror-body.sbs-active .sbs-panels {
+  display: flex;
+  width: 100%;
+}
+
+#mirror-body.sbs-active .sbs-panel {
+  width: 50vw;
+  max-width: 50vw;
+  height: 100dvh;
+  overflow-y: auto;
+}
+
+.vr-probe-button {
+  position: fixed;
+  right: 1rem;
+  bottom: 1rem;
+  z-index: 9999;
+  border: 1px solid hsl(var(--primary) / 0.5);
+  background: hsl(var(--card) / 0.78);
+  color: hsl(var(--foreground));
+  border-radius: 999px;
+  padding: 0.6rem 1rem;
+  font-family: "Space Grotesk", sans-serif;
+  font-size: 0.75rem;
+  font-weight: 700;
+  letter-spacing: 0.08em;
+  backdrop-filter: blur(10px);
+}
