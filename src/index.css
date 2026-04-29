@@ -141,12 +141,32 @@
 }
 
 #mirror-body.sbs-active .sbs-panels {
+  position: relative;
   display: flex;
-  width: calc(100vw - 2.2rem);
-  height: calc(100dvh - 2.2rem);
+  width: calc(100vw - 1rem);
+  height: calc(100dvh - 1rem);
   margin: 1.1rem auto;
   background: #000000;
   overflow: hidden;
+  gap: 0;
+}
+
+/* Línea divisoria visible entre ambos ojos (los paneles opacos tapaban un gradiente de fondo) */
+#mirror-body.sbs-active .sbs-panels::after {
+  content: "";
+  position: absolute;
+  left: 50%;
+  top: 0;
+  bottom: 0;
+  width: 2px;
+  margin-left: -1px;
+  background: hsl(var(--primary) / 0.72);
+  box-shadow:
+    0 0 10px hsl(var(--primary) / 0.45),
+    0 0 2px hsl(var(--primary) / 0.9);
+  pointer-events: none;
+  /* Por encima del contenido de cada panel, por debajo de los botones fijos (z-index 9999) */
+  z-index: 100;
 }
 
 #mirror-body.sbs-active .sbs-panel {
@@ -160,6 +180,7 @@
   min-height: 100dvh;
   background: #000000;
 }
+
 
 .vr-probe-button {
   position: fixed;

@@ -47,51 +47,19 @@ function MirrorSbsRoot() {
   useEffect(() => {
     if (!vrMode) return;
 
-    let frameId = 0;
-    const syncVideos = () => {
-      const leftVideos = Array.from(document.querySelectorAll("#mirror-left video")) as HTMLVideoElement[];
-      const rightVideos = Array.from(document.querySelectorAll("#mirror-right video")) as HTMLVideoElement[];
-      const total = Math.min(leftVideos.length, rightVideos.length);
-
-      for (let i = 0; i < total; i += 1) {
-        const source = leftVideos[i];
-        const target = rightVideos[i];
-
-        if (target.muted !== source.muted) target.muted = source.muted;
-        if (target.volume !== source.volume) target.volume = source.volume;
-        if (target.playbackRate !== source.playbackRate) target.playbackRate = source.playbackRate;
-        if (Math.abs(target.currentTime - source.currentTime) > 0.08) target.currentTime = source.currentTime;
-
-        if (source.paused && !target.paused) {
-          target.pause();
-        } else if (!source.paused && target.paused) {
-          void target.play().catch(() => undefined);
-        }
-      }
-
-      frameId = window.requestAnimationFrame(syncVideos);
-    };
-
-    frameId = window.requestAnimationFrame(syncVideos);
-    return () => window.cancelAnimationFrame(frameId);
-  }, [vrMode]);
-
-  useEffect(() => {
-    if (!vrMode) return;
-
     const leftPanel = document.getElementById("mirror-left");
     const rightPanel = document.getElementById("mirror-right");
     if (!leftPanel || !rightPanel) return;
 
     let syncingScroll = false;
+    let pendingMirrorEvent: MouseEvent | WheelEvent | PointerEvent | null = null;
+    let frameId = 0;
     const mirrorScroll = (source: HTMLElement, target: HTMLElement) => {
       if (syncingScroll) return;
       syncingScroll = true;
       target.scrollTop = source.scrollTop;
       target.scrollLeft = source.scrollLeft;
-      window.requestAnimationFrame(() => {
-        syncingScroll = false;
-      });
+      // Reset in the synchronized frame loop.
     };
 
     const onLeftScroll = () => mirrorScroll(leftPanel, rightPanel);
@@ -112,7 +80,7 @@ function MirrorSbsRoot() {
       "pointerup",
     ];
 
-    const mirrorMouseEvent = (event: MouseEvent | WheelEvent | PointerEvent) => {
+    const mirrorEventNow = (event: MouseEvent | WheelEvent | PointerEvent) => {
       if (!event.isTrusted) return;
 
       const sourcePanel = (event.target as Element | null)?.closest(".sbs-panel") as HTMLElement | null;
@@ -199,15 +167,59 @@ function MirrorSbsRoot() {
       );
     };
 
+    const highFrequencyEventTypes = new Set(["mousemove", "pointermove", "wheel"]);
+    const enqueueOrMirrorEvent = (event: MouseEvent | WheelEvent | PointerEvent) => {
+      if (!highFrequencyEventTypes.has(event.type)) {
+        mirrorEventNow(event);
+        return;
+      }
+      pendingMirrorEvent = event;
+    };
+
+    const animate = () => {
+      const leftVideos = Array.from(leftPanel.querySelectorAll("video")) as HTMLVideoElement[];
+      const rightVideos = Array.from(rightPanel.querySelectorAll("video")) as HTMLVideoElement[];
+      const total = Math.min(leftVideos.length, rightVideos.length);
+
+      // 1) Compute shared state once per frame (video and input deltas).
+      for (let i = 0; i < total; i += 1) {
+        const source = leftVideos[i];
+        const target = rightVideos[i];
+
+        if (target.muted !== source.muted) target.muted = source.muted;
+        if (target.volume !== source.volume) target.volume = source.volume;
+        if (target.playbackRate !== source.playbackRate) target.playbackRate = source.playbackRate;
+        if (Math.abs(target.currentTime - source.currentTime) > 0.08) target.currentTime = source.currentTime;
+
+        if (source.paused && !target.paused) {
+          target.pause();
+        } else if (!source.paused && target.paused) {
+          void target.play().catch(() => undefined);
+        }
+      }
+
+      // 2) Apply exactly once to both views in the same frame.
+      if (pendingMirrorEvent) {
+        mirrorEventNow(pendingMirrorEvent);
+        pendingMirrorEvent = null;
+      }
+
+      syncingScroll = false;
+      frameId = window.requestAnimationFrame(animate);
+    };
+
     mouseEventTypes.forEach((eventType) => {
-      document.addEventListener(eventType, mirrorMouseEvent as EventListener, { passive: false });
+      document.addEventListener(eventType, enqueueOrMirrorEvent as EventListener, { passive: false });
     });
+
+    frameId = window.requestAnimationFrame(animate);
 
     return () => {
       leftPanel.removeEventListener("scroll", onLeftScroll);
       rightPanel.removeEventListener("scroll", onRightScroll);
+      if (frameId) window.cancelAnimationFrame(frameId);
       mouseEventTypes.forEach((eventType) => {
-        document.removeEventListener(eventType, mirrorMouseEvent as EventListener);
+        document.removeEventListener(eventType, enqueueOrMirrorEvent as EventListener);
       });
     };
   }, [vrMode]);

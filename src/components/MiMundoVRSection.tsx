@@ -33,7 +33,8 @@ const MOON_ORBIT_RADIUS = CENTRAL_SPHERE_RADIUS * 1.95;
 const MOON_ORBIT_SPEED = 0.22;
 const EARTH_ROTATION_SPEED = 0.08;
 const FREE_MATCH_VIDEO_URL =
-  (import.meta.env.VITE_FREE_MATCH_VIDEO_URL as string | undefined)?.trim() || "/CASAPARLANTE_ BEÉLE.mp4";
+  (import.meta.env.VITE_FREE_MATCH_VIDEO_URL as string | undefined)?.trim() ||
+  "https://res.cloudinary.com/dmbpk37l5/video/upload/v1777414235/CASAPARLANTE__BE%C3%89LE_t4ykpm.mp4";
 const SECOND_MATCH_VIDEO_URL =
   (import.meta.env.VITE_SECOND_MATCH_VIDEO_URL as string | undefined)?.trim() || "/videos/colombia-argentina-resumen.mp4";
 const WINDOWS11_DESKTOP_URL =
