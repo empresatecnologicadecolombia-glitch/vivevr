@@ -163,9 +163,11 @@ function MirrorSbsRoot() {
       const sourceY = sourceRect.top + normY * sourceRect.height;
 
       const panels = document.querySelectorAll(".sbs-eye, .sbs-eye-canvas");
+      sourceHost.style.pointerEvents = "auto";
       panels.forEach((el) => ((el as HTMLElement).style.pointerEvents = "none"));
       const rawTarget = document.elementFromPoint(sourceX, sourceY) as HTMLElement | null;
       panels.forEach((el) => ((el as HTMLElement).style.pointerEvents = "auto"));
+      sourceHost.style.pointerEvents = "none";
       if (!rawTarget) return;
 
       const interactiveTarget =
@@ -340,10 +342,10 @@ function MirrorSbsRoot() {
         {vrMode && <div className="sbs-vr-backdrop" aria-hidden="true" />}
         {vrMode && (
           <>
-            <div className="sbs-eye" ref={leftEyeRef}>
+            <div className="sbs-eye sbs-eye-left" ref={leftEyeRef}>
               <canvas ref={leftEyeCanvasRef} className="sbs-eye-canvas" aria-hidden="true" />
             </div>
-            <div className="sbs-eye" ref={rightEyeRef}>
+            <div className="sbs-eye sbs-eye-right" ref={rightEyeRef}>
               <canvas ref={rightEyeCanvasRef} className="sbs-eye-canvas" aria-hidden="true" />
             </div>
           </>
