@@ -10,7 +10,7 @@ import {
   ImmersiveOrbitControls,
   SPHERE_RADIUS,
 } from "@/components/immersive/equirectSphereCore";
-import { resolvePodcastVideoId, type StreamerProfile } from "@/data/podcastStreamers";
+import { type StreamerProfile } from "@/data/podcastStreamers";
 
 type ReactionKind = "risas" | "aplausos" | "epico";
 
@@ -169,7 +169,6 @@ function SceneContent({
   streamer,
   panoramaUrl,
   embedUrl,
-  isPremiumLive,
   messages,
   chatInput,
   onChatInput,
@@ -181,7 +180,6 @@ function SceneContent({
   streamer: StreamerProfile;
   panoramaUrl: string;
   embedUrl: string;
-  isPremiumLive: boolean;
   messages: string[];
   chatInput: string;
   onChatInput: (v: string) => void;
@@ -205,28 +203,15 @@ function SceneContent({
           style={{ pointerEvents: "auto" }}
         >
           <div className="aspect-video w-full overflow-hidden rounded-xl border border-white/10 bg-black">
-            {isPremiumLive ? (
-              <div className="flex h-full min-h-[200px] flex-col items-center justify-center gap-3 bg-background/95 p-4 text-center">
-                <p className="font-display text-lg font-bold text-foreground">En vivo premium</p>
-                <p className="text-xs text-muted-foreground">Desbloquea con ticket Grada o VIP.</p>
-                <div className="flex flex-wrap justify-center gap-2">
-                  <Button variant="heroOutline" size="sm">
-                    Grada (${streamer.ticketGrada.toFixed(2)})
-                  </Button>
-                  <Button variant="hero" size="sm">
-                    VIP (${streamer.ticketVip.toFixed(2)})
-                  </Button>
-                </div>
-              </div>
-            ) : (
-              <iframe
-                title={streamer.loungeTitle}
-                src={embedUrl}
-                allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; fullscreen"
-                allowFullScreen
-                className="h-full w-full border-0"
-              />
-            )}
+            <video
+              src={embedUrl}
+              className="h-full w-full border-0 object-cover"
+              autoPlay
+              muted
+              loop
+              playsInline
+              controls
+            />
           </div>
         </div>
       </Html>
@@ -324,9 +309,7 @@ export default function PodcastImmersiveScene({
   onBurstDone,
 }: PodcastImmersiveSceneProps) {
   const panoramaUrl = streamer.panoramaImage.trim();
-  const videoId = resolvePodcastVideoId(streamer);
-  const embedUrl = `https://www.youtube.com/embed/${videoId}?rel=0`;
-  const isPremiumLive = streamer.status === "live" && streamer.streamType === "platform";
+  const embedUrl = "/videos/beele.mp4";
 
   const onPointerMissed = useCallback(() => {}, []);
 
@@ -343,7 +326,6 @@ export default function PodcastImmersiveScene({
             streamer={streamer}
             panoramaUrl={panoramaUrl}
             embedUrl={embedUrl}
-            isPremiumLive={isPremiumLive}
             messages={messages}
             chatInput={chatInput}
             onChatInput={onChatInput}
