@@ -7,21 +7,6 @@ import { formatUsd, stableUsdInRange } from "@/lib/pricing";
 const FeaturedEvents = () => {
   const events = [
     {
-      id: "podcast-hub-card",
-      title: "VIVE PODCAST HUB",
-      genre: "Podcast Premium",
-      date: "Acceso inmediato",
-      viewers: "Nuevas salas",
-      image:
-        "https://images.unsplash.com/photo-1598488035139-bdbb2231ce04?auto=format&fit=crop&w=1200&q=80",
-      live: true,
-      isFree: true,
-      price: 0,
-      anchorId: undefined,
-      ctaLabel: "Entrar al Podcast Hub",
-      to: "/podcast-hub",
-    },
-    {
       id: "a1b2c3d4-0003-4000-8000-000000000003",
       title: "STAND-UP / TEATRO Royale",
       genre: "Comedia & Teatro | Red Carpet",

@@ -152,17 +152,13 @@ function MirrorSbsRoot() {
     const rightEye = rightEyeRef.current;
     if (!sourceHost || !leftEye || !rightEye) return;
 
-    const forwardPointer = (event: PointerEvent | MouseEvent | WheelEvent | TouchEvent, eye: HTMLElement) => {
+    const forwardPointer = (event: PointerEvent | MouseEvent | WheelEvent, eye: HTMLElement) => {
       const eyeRect = eye.getBoundingClientRect();
       const sourceRect = sourceHost.getBoundingClientRect();
       if (eyeRect.width <= 0 || eyeRect.height <= 0 || sourceRect.width <= 0 || sourceRect.height <= 0) return;
 
-      const touchPoint =
-        event instanceof TouchEvent ? (event.changedTouches[0] ?? event.touches[0]) : null;
-      const clientX = touchPoint ? touchPoint.clientX : event.clientX;
-      const clientY = touchPoint ? touchPoint.clientY : event.clientY;
-      const normX = (clientX - eyeRect.left) / eyeRect.width;
-      const normY = (clientY - eyeRect.top) / eyeRect.height;
+      const normX = (event.clientX - eyeRect.left) / eyeRect.width;
+      const normY = (event.clientY - eyeRect.top) / eyeRect.height;
       const sourceX = sourceRect.left + normX * sourceRect.width;
       const sourceY = sourceRect.top + normY * sourceRect.height;
 
@@ -197,26 +193,6 @@ function MirrorSbsRoot() {
       if (event.type === "click") {
         interactiveTarget.click();
         return;
-      }
-
-      if (event instanceof TouchEvent) {
-        if (event.type === "touchend") {
-          interactiveTarget.click();
-          return;
-        }
-        if (event.type === "touchstart") {
-          interactiveTarget.dispatchEvent(
-            new MouseEvent("mousedown", {
-              bubbles: true,
-              cancelable: true,
-              clientX: sourceX,
-              clientY: sourceY,
-              button: 0,
-              buttons: 1,
-            }),
-          );
-          return;
-        }
       }
 
       if (event instanceof WheelEvent) {
@@ -292,31 +268,17 @@ function MirrorSbsRoot() {
         e.stopPropagation();
         forwardPointer(e, eye);
       };
-      const onTouchStart = (e: TouchEvent) => {
-        e.preventDefault();
-        e.stopPropagation();
-        forwardPointer(e, eye);
-      };
-      const onTouchEnd = (e: TouchEvent) => {
-        e.preventDefault();
-        e.stopPropagation();
-        forwardPointer(e, eye);
-      };
 
       eye.addEventListener("pointerdown", onPointerDown, { passive: false });
       eye.addEventListener("pointerup", onPointerUp, { passive: false });
       eye.addEventListener("click", onClick, { passive: false });
       eye.addEventListener("wheel", onWheel, { passive: false });
-      eye.addEventListener("touchstart", onTouchStart, { passive: false });
-      eye.addEventListener("touchend", onTouchEnd, { passive: false });
 
       return () => {
         eye.removeEventListener("pointerdown", onPointerDown);
         eye.removeEventListener("pointerup", onPointerUp);
         eye.removeEventListener("click", onClick);
         eye.removeEventListener("wheel", onWheel);
-        eye.removeEventListener("touchstart", onTouchStart);
-        eye.removeEventListener("touchend", onTouchEnd);
       };
     };
 

@@ -1,6 +1,6 @@
 import { Billboard, Html } from "@react-three/drei";
 import { Canvas, useFrame } from "@react-three/fiber";
-import { Suspense, useCallback, useMemo, useRef } from "react";
+import { Suspense, useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { Link } from "react-router-dom";
 import * as THREE from "three";
 import { SRGBColorSpace } from "three";
@@ -165,10 +165,54 @@ function FloatingEmojiBurst({
   );
 }
 
+function VideoEquirectangularInterior({ url }: { url: string }) {
+  const { video, texture } = useMemo(() => {
+    const element = document.createElement("video");
+    element.src = url;
+    element.crossOrigin = "anonymous";
+    element.loop = true;
+    element.muted = true;
+    element.autoplay = true;
+    element.playsInline = true;
+    element.preload = "auto";
+    const videoTexture = new THREE.VideoTexture(element);
+    videoTexture.colorSpace = SRGBColorSpace;
+    videoTexture.minFilter = THREE.LinearFilter;
+    videoTexture.magFilter = THREE.LinearFilter;
+    videoTexture.generateMipmaps = false;
+    return { video: element, texture: videoTexture };
+  }, [url]);
+
+  useEffect(() => {
+    void video.play().catch(() => undefined);
+    const resume = () => {
+      void video.play().catch(() => undefined);
+    };
+    window.addEventListener("pointerdown", resume, { once: true });
+    window.addEventListener("touchstart", resume, { once: true });
+    return () => {
+      window.removeEventListener("pointerdown", resume);
+      window.removeEventListener("touchstart", resume);
+      texture.dispose();
+      video.pause();
+      video.src = "";
+      video.load();
+    };
+  }, [texture, video]);
+
+  return (
+    <mesh>
+      <sphereGeometry args={[SPHERE_RADIUS, 96, 64]} />
+      <meshBasicMaterial map={texture} side={THREE.BackSide} depthWrite={false} />
+    </mesh>
+  );
+}
+
 function SceneContent({
   streamer,
-  panoramaUrl,
   embedUrl,
+  videoIn360Background,
+  onToggleVideoTarget,
   messages,
   chatInput,
   onChatInput,
@@ -178,8 +222,9 @@ function SceneContent({
   onBurstDone,
 }: {
   streamer: StreamerProfile;
-  panoramaUrl: string;
   embedUrl: string;
+  videoIn360Background: boolean;
+  onToggleVideoTarget: () => void;
   messages: string[];
   chatInput: string;
   onChatInput: (v: string) => void;
@@ -191,71 +236,59 @@ function SceneContent({
   return (
     <>
       <Suspense fallback={null}>
-        <EquirectangularInterior url={panoramaUrl} />
+        {videoIn360Background ? (
+          <VideoEquirectangularInterior url={embedUrl} />
+        ) : (
+          <EquirectangularInterior url={streamer.panoramaImage.trim()} />
+        )}
       </Suspense>
 
       <ambientLight intensity={0.85} />
       <directionalLight position={[4, 10, 6]} intensity={0.35} />
 
-      <Html position={[0, 1.35, -8.6]} transform distanceFactor={11} center style={{ width: "min(72vw, 620px)" }}>
-        <div
-          className="rounded-2xl border border-white/25 bg-black/50 p-2 shadow-[0_40px_120px_rgba(0,0,0,0.85)] backdrop-blur-md"
-          style={{ pointerEvents: "auto" }}
-        >
-          <div className="aspect-video w-full overflow-hidden rounded-xl border border-white/10 bg-black">
-            <video
-              src={embedUrl}
-              className="h-full w-full border-0 object-cover"
-              autoPlay
-              muted
-              loop
-              playsInline
-              controls
-            />
-          </div>
-        </div>
-      </Html>
 
-      <SpatialReactionButtons onReaction={onReaction} />
 
-      <Html position={[5.45, 0.82, -7.2]} transform distanceFactor={7.6} style={{ width: "min(92vw, 290px)" }}>
-        <div
-          className="flex max-h-[48vh] flex-col rounded-2xl border border-white/20 bg-black/40 p-3 shadow-xl backdrop-blur-2xl"
-          style={{ pointerEvents: "auto" }}
-        >
-          <p className="mb-2 border-b border-white/10 pb-2 text-[10px] font-display uppercase tracking-[0.2em] text-cyan-300">
-            Chat
-          </p>
-          <div className="min-h-0 flex-1 space-y-1 overflow-y-auto text-xs text-slate-200">
-            {messages.map((m, i) => (
-              <p key={`${i}-${m.slice(0, 10)}`}>● {m}</p>
-            ))}
+      {!videoIn360Background && (
+        <Html position={[0, 1.35, -8.6]} transform distanceFactor={11} center style={{ width: "min(72vw, 620px)" }}>
+          <div
+            className="rounded-2xl border border-white/25 bg-black/50 p-2 shadow-[0_40px_120px_rgba(0,0,0,0.85)] backdrop-blur-md"
+            style={{ pointerEvents: "auto" }}
+          >
+            <div className="aspect-video w-full overflow-hidden rounded-xl border border-white/10 bg-black">
+              <video
+                src={embedUrl}
+                className="h-full w-full border-0 object-cover"
+                autoPlay
+                muted
+                loop
+                playsInline
+                controls
+              />
+              <Button
+                type="button"
+                size="sm"
+                onClick={onToggleVideoTarget}
+                className="absolute -right-14 top-3 z-20 h-8 rounded-full border border-amber-200 bg-amber-300 px-4 text-xs font-bold uppercase tracking-wider text-black shadow-[0_0_18px_rgba(251,191,36,0.75)] hover:bg-amber-200"
+              >
+                360
+              </Button>
+            </div>
           </div>
-          <div className="mt-2 flex gap-1 border-t border-white/10 pt-2">
-            <input
-              value={chatInput}
-              onChange={(e) => onChatInput(e.target.value)}
-              onKeyDown={(e) => e.key === "Enter" && onSendChat()}
-              placeholder="Mensaje…"
-              className="h-8 flex-1 rounded-lg border border-white/15 bg-black/50 px-2 text-xs text-white outline-none"
-            />
-            <Button type="button" size="sm" variant="heroOutline" className="h-8 shrink-0 px-2" onClick={onSendChat}>
-              →
-            </Button>
-          </div>
-        </div>
-      </Html>
+        </Html>
+      )}
 
-      <Html position={[5.7, 2.15, -7.55]} transform distanceFactor={8.2} style={{ width: "min(88vw, 250px)" }}>
-        <div
-          className="flex max-w-sm flex-col gap-2 rounded-2xl border border-cyan-500/35 bg-black/45 p-3 text-left shadow-lg backdrop-blur-xl"
-          style={{ pointerEvents: "auto" }}
-        >
-          <p className="text-[10px] uppercase tracking-[0.2em] text-cyan-300">Lobby Sync</p>
-          <p className="text-xs text-slate-200">{messages.length} mensajes activos</p>
-          <p className="text-[11px] text-slate-400">Conectado a la sala global en tiempo real.</p>
-        </div>
-      </Html>
+      {videoIn360Background && (
+        <Html position={[6.6, 4.05, -8.1]} transform distanceFactor={9.2}>
+          <Button
+            type="button"
+            size="sm"
+            onClick={onToggleVideoTarget}
+            className="h-8 rounded-full border border-amber-200 bg-amber-300 px-4 text-xs font-bold uppercase tracking-wider text-black shadow-[0_0_18px_rgba(251,191,36,0.75)] hover:bg-amber-200"
+          >
+            360
+          </Button>
+        </Html>
+      )}
 
       <Html position={[-4.8, 2.45, -7.2]} transform distanceFactor={9.2}>
         <div
@@ -276,13 +309,6 @@ function SceneContent({
         </div>
       </Html>
 
-      {bursts.map((b) => (
-        <FloatingEmojiBurst
-          key={b.id}
-          emoji={reactionConfig[b.kind].emoji}
-          onDone={() => onBurstDone(b.id)}
-        />
-      ))}
     </>
   );
 }
@@ -308,8 +334,8 @@ export default function PodcastImmersiveScene({
   bursts,
   onBurstDone,
 }: PodcastImmersiveSceneProps) {
-  const panoramaUrl = streamer.panoramaImage.trim();
   const embedUrl = "/videos/beele.mp4";
+  const [videoIn360Background, setVideoIn360Background] = useState(false);
 
   const onPointerMissed = useCallback(() => {}, []);
 
@@ -324,8 +350,9 @@ export default function PodcastImmersiveScene({
         <Suspense fallback={null}>
           <SceneContent
             streamer={streamer}
-            panoramaUrl={panoramaUrl}
             embedUrl={embedUrl}
+            videoIn360Background={videoIn360Background}
+            onToggleVideoTarget={() => setVideoIn360Background((prev) => !prev)}
             messages={messages}
             chatInput={chatInput}
             onChatInput={onChatInput}
