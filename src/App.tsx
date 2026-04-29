@@ -18,7 +18,6 @@ import LobbyGlobalPage from "./pages/LobbyGlobalPage.tsx";
 import EventosPage from "./pages/EventosPage.tsx";
 import InicioPage from "./pages/InicioPage.tsx";
 import NuestrasSalasPage from "./pages/NuestrasSalasPage.tsx";
-import VrPage from "./pages/VrPage.tsx";
 import EducacionPage from "./pages/EducacionPage.tsx";
 import NotFound from "./pages/NotFound.tsx";
 
@@ -37,7 +36,6 @@ const App = () => (
             <Route path="/eventos" element={<EventosPage />} />
             <Route path="/nuestras-salas" element={<NuestrasSalasPage />} />
             <Route path="/educacion" element={<EducacionPage />} />
-            <Route path="/vr" element={<VrPage />} />
             <Route path="/event/:id" element={<EventPage />} />
             <Route path="/auth" element={<AuthPage />} />
             <Route path="/tienda" element={<TiendaPage />} />

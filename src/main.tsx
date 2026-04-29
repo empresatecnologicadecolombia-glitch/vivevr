@@ -1,11 +1,21 @@
-import { useEffect, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { createRoot } from "react-dom/client";
+import html2canvas from "html2canvas";
 import App from "./App.tsx";
 import "./index.css";
 
 function MirrorSbsRoot() {
   const [vrMode, setVrMode] = useState(false);
   const [isFullscreen, setIsFullscreen] = useState(false);
+  const [hasFrame, setHasFrame] = useState(false);
+  const lensMapRef = useRef<SVGFEDisplacementMapElement | null>(null);
+  const sourceHostRef = useRef<HTMLDivElement | null>(null);
+  const masterCanvasRef = useRef<HTMLCanvasElement | null>(null);
+  const leftEyeCanvasRef = useRef<HTMLCanvasElement | null>(null);
+  const rightEyeCanvasRef = useRef<HTMLCanvasElement | null>(null);
+  const leftEyeRef = useRef<HTMLDivElement | null>(null);
+  const rightEyeRef = useRef<HTMLDivElement | null>(null);
+  const VR_LENS_STRENGTH = 0.5;
 
   const toggleFullscreen = () => {
     const root = document.documentElement;
@@ -45,94 +55,154 @@ function MirrorSbsRoot() {
   }, []);
 
   useEffect(() => {
-    if (!vrMode) return;
+    const map = lensMapRef.current;
+    if (!map) return;
+    // Match the user's shader scale intention in a DOM-safe filter.
+    map.setAttribute("scale", String(Math.max(0, Math.min(1.2, VR_LENS_STRENGTH)) * 44));
+  }, []);
 
-    const leftPanel = document.getElementById("mirror-left");
-    const rightPanel = document.getElementById("mirror-right");
-    if (!leftPanel || !rightPanel) return;
+  useEffect(() => {
+    document.body.classList.toggle("vr-mode-active", vrMode);
+    return () => document.body.classList.remove("vr-mode-active");
+  }, [vrMode]);
 
-    let syncingScroll = false;
-    let pendingMirrorEvent: MouseEvent | WheelEvent | PointerEvent | null = null;
-    let frameId = 0;
-    const mirrorScroll = (source: HTMLElement, target: HTMLElement) => {
-      if (syncingScroll) return;
-      syncingScroll = true;
-      target.scrollTop = source.scrollTop;
-      target.scrollLeft = source.scrollLeft;
-      // Reset in the synchronized frame loop.
+  useEffect(() => {
+    if (!vrMode) {
+      setHasFrame(false);
+      return;
+    }
+
+    const sourceHost = sourceHostRef.current;
+    const masterCanvas = masterCanvasRef.current;
+    const leftCanvas = leftEyeCanvasRef.current;
+    const rightCanvas = rightEyeCanvasRef.current;
+    if (!sourceHost || !masterCanvas || !leftCanvas || !rightCanvas) return;
+
+    const masterCtx = masterCanvas.getContext("2d", { alpha: false });
+    const leftCtx = leftCanvas.getContext("2d", { alpha: false });
+    const rightCtx = rightCanvas.getContext("2d", { alpha: false });
+    if (!masterCtx || !leftCtx || !rightCtx) return;
+
+    let rafId = 0;
+    let framePainted = false;
+
+    const syncCanvasSize = (canvas: HTMLCanvasElement) => {
+      const dpr = Math.min(window.devicePixelRatio || 1, 2);
+      const width = Math.max(2, Math.floor(canvas.clientWidth * dpr));
+      const height = Math.max(2, Math.floor(canvas.clientHeight * dpr));
+      if (canvas.width !== width || canvas.height !== height) {
+        canvas.width = width;
+        canvas.height = height;
+      }
     };
 
-    const onLeftScroll = () => mirrorScroll(leftPanel, rightPanel);
-    const onRightScroll = () => mirrorScroll(rightPanel, leftPanel);
-    leftPanel.addEventListener("scroll", onLeftScroll, { passive: true });
-    rightPanel.addEventListener("scroll", onRightScroll, { passive: true });
+    const drawEye = (ctx: CanvasRenderingContext2D, target: HTMLCanvasElement) => {
+      ctx.fillStyle = "#000000";
+      ctx.fillRect(0, 0, target.width, target.height);
+      ctx.imageSmoothingEnabled = true;
+      ctx.imageSmoothingQuality = "high";
+      ctx.drawImage(masterCanvas, 0, 0, masterCanvas.width, masterCanvas.height, 0, 0, target.width, target.height);
+    };
 
-    const mouseEventTypes: Array<keyof DocumentEventMap> = [
-      "mousemove",
-      "mousedown",
-      "mouseup",
-      "click",
-      "dblclick",
-      "wheel",
-      "contextmenu",
-      "pointermove",
-      "pointerdown",
-      "pointerup",
-    ];
-
-    const mirrorEventNow = (event: MouseEvent | WheelEvent | PointerEvent) => {
-      if (!event.isTrusted) return;
-
-      const sourcePanel = (event.target as Element | null)?.closest(".sbs-panel") as HTMLElement | null;
-      if (!sourcePanel) return;
-      const targetPanel = sourcePanel.id === "mirror-left" ? rightPanel : leftPanel;
-
-      const srcRect = sourcePanel.getBoundingClientRect();
-      const dstRect = targetPanel.getBoundingClientRect();
-      if (srcRect.width <= 0 || srcRect.height <= 0 || dstRect.width <= 0 || dstRect.height <= 0) return;
-
-      const normX = (event.clientX - srcRect.left) / srcRect.width;
-      const normY = (event.clientY - srcRect.top) / srcRect.height;
-      const mirroredX = dstRect.left + normX * dstRect.width;
-      const mirroredY = dstRect.top + normY * dstRect.height;
-
-      const targetEl = document.elementFromPoint(mirroredX, mirroredY) as HTMLElement | null;
-      if (!targetEl) return;
-
-      if (event.type === "click" && event instanceof MouseEvent) {
-        const clickedNavButton = (event.target as HTMLElement | null)?.closest("nav button") as HTMLButtonElement | null;
-        if (clickedNavButton) {
-          const buttonLabel = clickedNavButton.textContent?.trim();
-          if (buttonLabel) {
-            const mirroredNavButtons = Array.from(targetPanel.querySelectorAll("nav button")) as HTMLButtonElement[];
-            const sameButton = mirroredNavButtons.find(
-              (button) => button.textContent?.trim() === buttonLabel,
-            );
-            if (sameButton) {
-              sameButton.click();
-              return;
+    let captureInFlight = false;
+    const render = () => {
+      syncCanvasSize(leftCanvas);
+      syncCanvasSize(rightCanvas);
+      if (!captureInFlight) {
+        captureInFlight = true;
+        void html2canvas(sourceHost, {
+          backgroundColor: "#000000",
+          useCORS: true,
+          scale: 1,
+          logging: false,
+        })
+          .then((snapshot) => {
+            if (masterCanvas.width !== snapshot.width || masterCanvas.height !== snapshot.height) {
+              masterCanvas.width = snapshot.width;
+              masterCanvas.height = snapshot.height;
             }
-          }
-        }
+
+            masterCtx.clearRect(0, 0, masterCanvas.width, masterCanvas.height);
+            masterCtx.drawImage(snapshot, 0, 0, masterCanvas.width, masterCanvas.height);
+            drawEye(leftCtx, leftCanvas);
+            drawEye(rightCtx, rightCanvas);
+
+            if (!framePainted) {
+              framePainted = true;
+              setHasFrame(true);
+            }
+          })
+          .finally(() => {
+            captureInFlight = false;
+          });
       }
 
-      const base = {
-        bubbles: true,
-        cancelable: true,
-        clientX: mirroredX,
-        clientY: mirroredY,
-        screenX: event.screenX,
-        screenY: event.screenY,
-        ctrlKey: event.ctrlKey,
-        shiftKey: event.shiftKey,
-        altKey: event.altKey,
-        metaKey: event.metaKey,
+      rafId = window.requestAnimationFrame(render);
+    };
+
+    rafId = window.requestAnimationFrame(render);
+    return () => window.cancelAnimationFrame(rafId);
+  }, [vrMode]);
+
+  useEffect(() => {
+    if (!vrMode || !hasFrame) return;
+
+    const sourceHost = sourceHostRef.current;
+    const leftEye = leftEyeRef.current;
+    const rightEye = rightEyeRef.current;
+    if (!sourceHost || !leftEye || !rightEye) return;
+
+    const forwardPointer = (event: PointerEvent | MouseEvent | WheelEvent, eye: HTMLElement) => {
+      const eyeRect = eye.getBoundingClientRect();
+      const sourceRect = sourceHost.getBoundingClientRect();
+      if (eyeRect.width <= 0 || eyeRect.height <= 0 || sourceRect.width <= 0 || sourceRect.height <= 0) return;
+
+      const normX = (event.clientX - eyeRect.left) / eyeRect.width;
+      const normY = (event.clientY - eyeRect.top) / eyeRect.height;
+      const sourceX = sourceRect.left + normX * sourceRect.width;
+      const sourceY = sourceRect.top + normY * sourceRect.height;
+
+      const panels = document.querySelectorAll(".sbs-eye, .sbs-eye-canvas");
+      panels.forEach((el) => ((el as HTMLElement).style.pointerEvents = "none"));
+      const rawTarget = document.elementFromPoint(sourceX, sourceY) as HTMLElement | null;
+      panels.forEach((el) => ((el as HTMLElement).style.pointerEvents = "auto"));
+      if (!rawTarget) return;
+
+      const interactiveTarget =
+        rawTarget.closest("button, a, [role='button'], input, select, textarea, label") ??
+        rawTarget;
+
+      const findScrollableAncestor = (el: HTMLElement | null) => {
+        let node: HTMLElement | null = el;
+        while (node && node !== sourceHost) {
+          const style = window.getComputedStyle(node);
+          const canScrollY =
+            (style.overflowY === "auto" || style.overflowY === "scroll") &&
+            node.scrollHeight > node.clientHeight;
+          const canScrollX =
+            (style.overflowX === "auto" || style.overflowX === "scroll") &&
+            node.scrollWidth > node.clientWidth;
+          if (canScrollY || canScrollX) return node;
+          node = node.parentElement;
+        }
+        return sourceHost;
       };
 
+      if (event.type === "click") {
+        interactiveTarget.click();
+        return;
+      }
+
       if (event instanceof WheelEvent) {
-        targetEl.dispatchEvent(
-          new WheelEvent(event.type, {
-            ...base,
+        const scrollHost = findScrollableAncestor(rawTarget);
+        scrollHost.scrollTop += event.deltaY;
+        scrollHost.scrollLeft += event.deltaX;
+        interactiveTarget.dispatchEvent(
+          new WheelEvent("wheel", {
+            bubbles: true,
+            cancelable: true,
+            clientX: sourceX,
+            clientY: sourceY,
             deltaX: event.deltaX,
             deltaY: event.deltaY,
             deltaZ: event.deltaZ,
@@ -143,9 +213,12 @@ function MirrorSbsRoot() {
       }
 
       if (event instanceof PointerEvent) {
-        targetEl.dispatchEvent(
+        interactiveTarget.dispatchEvent(
           new PointerEvent(event.type, {
-            ...base,
+            bubbles: true,
+            cancelable: true,
+            clientX: sourceX,
+            clientY: sourceY,
             pointerId: event.pointerId,
             pointerType: event.pointerType,
             isPrimary: event.isPrimary,
@@ -154,84 +227,102 @@ function MirrorSbsRoot() {
             buttons: event.buttons,
           }),
         );
-        return;
       }
 
-      targetEl.dispatchEvent(
-        new MouseEvent(event.type, {
-          ...base,
-          button: event.button,
-          buttons: event.buttons,
-          detail: event.detail,
+      const type = event.type === "pointerdown" ? "mousedown" : event.type === "pointerup" ? "mouseup" : "mousemove";
+      interactiveTarget.dispatchEvent(
+        new MouseEvent(type, {
+          bubbles: true,
+          cancelable: true,
+          clientX: sourceX,
+          clientY: sourceY,
+          button: (event as MouseEvent).button ?? 0,
+          buttons: (event as MouseEvent).buttons ?? 1,
         }),
       );
     };
 
-    const highFrequencyEventTypes = new Set(["mousemove", "pointermove", "wheel"]);
-    const enqueueOrMirrorEvent = (event: MouseEvent | WheelEvent | PointerEvent) => {
-      if (!highFrequencyEventTypes.has(event.type)) {
-        mirrorEventNow(event);
-        return;
-      }
-      pendingMirrorEvent = event;
+    const bindEye = (eye: HTMLElement) => {
+      const onPointerDown = (e: PointerEvent) => {
+        e.preventDefault();
+        e.stopPropagation();
+        forwardPointer(e, eye);
+      };
+      const onPointerUp = (e: PointerEvent) => {
+        e.preventDefault();
+        e.stopPropagation();
+        forwardPointer(e, eye);
+      };
+      const onClick = (e: MouseEvent) => {
+        e.preventDefault();
+        e.stopPropagation();
+        forwardPointer(e, eye);
+      };
+      const onWheel = (e: WheelEvent) => {
+        e.preventDefault();
+        e.stopPropagation();
+        forwardPointer(e, eye);
+      };
+
+      eye.addEventListener("pointerdown", onPointerDown, { passive: false });
+      eye.addEventListener("pointerup", onPointerUp, { passive: false });
+      eye.addEventListener("click", onClick, { passive: false });
+      eye.addEventListener("wheel", onWheel, { passive: false });
+
+      return () => {
+        eye.removeEventListener("pointerdown", onPointerDown);
+        eye.removeEventListener("pointerup", onPointerUp);
+        eye.removeEventListener("click", onClick);
+        eye.removeEventListener("wheel", onWheel);
+      };
     };
 
-    const animate = () => {
-      const leftVideos = Array.from(leftPanel.querySelectorAll("video")) as HTMLVideoElement[];
-      const rightVideos = Array.from(rightPanel.querySelectorAll("video")) as HTMLVideoElement[];
-      const total = Math.min(leftVideos.length, rightVideos.length);
-
-      // 1) Compute shared state once per frame (video and input deltas).
-      for (let i = 0; i < total; i += 1) {
-        const source = leftVideos[i];
-        const target = rightVideos[i];
-
-        if (target.muted !== source.muted) target.muted = source.muted;
-        if (target.volume !== source.volume) target.volume = source.volume;
-        if (target.playbackRate !== source.playbackRate) target.playbackRate = source.playbackRate;
-        if (Math.abs(target.currentTime - source.currentTime) > 0.08) target.currentTime = source.currentTime;
-
-        if (source.paused && !target.paused) {
-          target.pause();
-        } else if (!source.paused && target.paused) {
-          void target.play().catch(() => undefined);
-        }
-      }
-
-      // 2) Apply exactly once to both views in the same frame.
-      if (pendingMirrorEvent) {
-        mirrorEventNow(pendingMirrorEvent);
-        pendingMirrorEvent = null;
-      }
-
-      syncingScroll = false;
-      frameId = window.requestAnimationFrame(animate);
-    };
-
-    mouseEventTypes.forEach((eventType) => {
-      document.addEventListener(eventType, enqueueOrMirrorEvent as EventListener, { passive: false });
-    });
-
-    frameId = window.requestAnimationFrame(animate);
-
+    const unbindLeft = bindEye(leftEye);
+    const unbindRight = bindEye(rightEye);
     return () => {
-      leftPanel.removeEventListener("scroll", onLeftScroll);
-      rightPanel.removeEventListener("scroll", onRightScroll);
-      if (frameId) window.cancelAnimationFrame(frameId);
-      mouseEventTypes.forEach((eventType) => {
-        document.removeEventListener(eventType, enqueueOrMirrorEvent as EventListener);
-      });
+      unbindLeft();
+      unbindRight();
     };
-  }, [vrMode]);
+  }, [vrMode, hasFrame]);
 
   return (
-    <div id="mirror-body" className={vrMode ? "sbs-active" : ""}>
+    <div id="mirror-body" className={`${vrMode ? "sbs-active" : ""} ${vrMode && hasFrame ? "sbs-ready" : ""}`}>
+      <svg width="0" height="0" aria-hidden="true" focusable="false" className="vr-lens-defs">
+        <defs>
+          <radialGradient id="vrDistortionGradient" cx="50%" cy="50%" r="50%">
+            <stop offset="0%" stopColor="rgb(128,128,128)" />
+            <stop offset="65%" stopColor="rgb(170,170,128)" />
+            <stop offset="100%" stopColor="rgb(216,216,128)" />
+          </radialGradient>
+          <filter id="vr-distortion" x="-10%" y="-10%" width="120%" height="120%">
+            <feImage
+              href={`data:image/svg+xml;utf8,${encodeURIComponent(
+                '<svg xmlns="http://www.w3.org/2000/svg" width="1024" height="1024"><rect width="100%" height="100%" fill="url(%23vrDistortionGradient)"/><defs><radialGradient id="vrDistortionGradient" cx="50%" cy="50%" r="50%"><stop offset="0%" stop-color="rgb(128,128,128)"/><stop offset="65%" stop-color="rgb(170,170,128)"/><stop offset="100%" stop-color="rgb(216,216,128)"/></radialGradient></defs></svg>',
+              )}`}
+              x="0"
+              y="0"
+              width="100%"
+              height="100%"
+              result="lensMap"
+              preserveAspectRatio="none"
+            />
+            <feDisplacementMap
+              ref={lensMapRef}
+              in="SourceGraphic"
+              in2="lensMap"
+              scale="22"
+              xChannelSelector="R"
+              yChannelSelector="G"
+            />
+          </filter>
+        </defs>
+      </svg>
       <button
         type="button"
         className="vr-probe-button"
         onClick={() => setVrMode((prev) => !prev)}
       >
-        {vrMode ? "SALIR MODO VR" : "PROBAR MODO VR"}
+        {vrMode ? "SALIR VR MODE" : "VR MODE"}
       </button>
       <button
         type="button"
@@ -242,13 +333,20 @@ function MirrorSbsRoot() {
       </button>
 
       <div className="sbs-panels">
-        <div id="mirror-left" className="sbs-panel">
+        <div id="mirror-source" ref={sourceHostRef} className="sbs-source">
           <App />
         </div>
+        <canvas ref={masterCanvasRef} className="sbs-master-canvas" aria-hidden="true" />
+        {vrMode && <div className="sbs-vr-backdrop" aria-hidden="true" />}
         {vrMode && (
-          <div id="mirror-right" className="sbs-panel sbs-panel-right">
-            <App />
-          </div>
+          <>
+            <div className="sbs-eye" ref={leftEyeRef}>
+              <canvas ref={leftEyeCanvasRef} className="sbs-eye-canvas" aria-hidden="true" />
+            </div>
+            <div className="sbs-eye" ref={rightEyeRef}>
+              <canvas ref={rightEyeCanvasRef} className="sbs-eye-canvas" aria-hidden="true" />
+            </div>
+          </>
         )}
       </div>
     </div>
