@@ -129,12 +129,19 @@
   min-height: 100dvh;
 }
 
+.vr-lens-defs {
+  position: absolute;
+  width: 0;
+  height: 0;
+  overflow: hidden;
+}
+
 .sbs-panels {
   display: block;
   width: 100%;
 }
 
-.sbs-panel {
+.sbs-source {
   width: 100%;
   min-height: 100dvh;
   overflow-x: hidden;
@@ -143,37 +150,60 @@
 #mirror-body.sbs-active .sbs-panels {
   position: relative;
   display: flex;
-  width: calc(100vw - 1rem);
-  height: calc(100dvh - 1rem);
-  margin: 1.1rem auto;
+  width: 100vw;
+  height: 100dvh;
+  margin: 0;
   background: #000000;
   overflow: hidden;
   gap: 0;
 }
 
-/* Línea divisoria visible entre ambos ojos (los paneles opacos tapaban un gradiente de fondo) */
-#mirror-body.sbs-active .sbs-panels::after {
-  content: "";
-  position: absolute;
-  left: 50%;
-  top: 0;
-  bottom: 0;
-  width: 2px;
-  margin-left: -1px;
-  background: hsl(var(--primary) / 0.72);
-  box-shadow:
-    0 0 10px hsl(var(--primary) / 0.45),
-    0 0 2px hsl(var(--primary) / 0.9);
-  pointer-events: none;
-  /* Por encima del contenido de cada panel, por debajo de los botones fijos (z-index 9999) */
-  z-index: 100;
+#mirror-body.sbs-active .sbs-source {
+  position: fixed;
+  inset: 0;
+  width: 100vw;
+  min-height: 100dvh;
+  overflow: auto;
+  z-index: 1;
 }
 
-#mirror-body.sbs-active .sbs-panel {
+#mirror-body.sbs-active .sbs-vr-backdrop {
+  position: absolute;
+  inset: 0;
+  background: #000;
+  z-index: 2;
+  pointer-events: none;
+}
+
+.sbs-master-canvas {
+  position: fixed;
+  width: 1px;
+  height: 1px;
+  left: -9999px;
+  top: -9999px;
+  opacity: 0;
+  pointer-events: none;
+}
+
+#mirror-body.sbs-active .sbs-eye {
+  position: relative;
   width: 50%;
-  max-width: 50%;
   height: 100%;
-  overflow-y: auto;
+  overflow: hidden;
+  z-index: 3;
+  background: #000;
+  pointer-events: auto;
+  filter: url(#vr-distortion);
+  transform: translateZ(0);
+  will-change: transform;
+}
+
+#mirror-body.sbs-active .sbs-eye-canvas {
+  width: 100%;
+  height: 100%;
+  display: block;
+  background: #000;
+  pointer-events: auto;
 }
 
 #mirror-body.sbs-active {
