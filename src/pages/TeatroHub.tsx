@@ -30,18 +30,16 @@ const teatroRooms: TeatroRoom[] = [
     country: "Peru",
     hosts: "Live Show Oficial",
     description: "Formato irreverente, dinamico y participativo con dinamicas en tiempo real.",
-    image:
-      "https://images.unsplash.com/photo-1492684223066-81342ee5ff30?auto=format&fit=crop&w=1400&q=80",
+    image: "/hablando-huevadas.png",
     vip: false,
   },
   {
-    id: "comediantes-vip",
-    title: "Comediantes VIP",
-    country: "Colombia",
-    hosts: "Ricardo Quevedo, Juanda Caribe, Lucho Torres",
-    description: "Noche de stand-up de alto nivel con invitados sorpresa y backstage social.",
-    image:
-      "https://images.unsplash.com/photo-1460723237483-7a6dc9d0b212?auto=format&fit=crop&w=1400&q=80",
+    id: "xavi",
+    title: "Xavi",
+    country: "USA / México",
+    hosts: "Regional mexicano",
+    description: "Corridos tumbados en vivo con la comunidad y sesiones exclusivas.",
+    image: "/xavi-avatar.png",
     vip: false,
   },
   {

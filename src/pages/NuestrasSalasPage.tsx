@@ -48,6 +48,26 @@ const NuestrasSalasPage = () => {
     "onniverso://open?url=https://res.cloudinary.com/dfsabdxup/video/upload/v1777751512/Franco_Escamilla.-_Mon%C3%B3logo__Ol%C3%ADmpicos_de_Invierno__hmo9ss.mp4";
   const ONNIVERSE_OPEN_J_BALVIN_URL =
     "onniverso://open?url=https://res.cloudinary.com/dfsabdxup/video/upload/v1777751506/57_-_JBalvin_-_Ciudad_Primavera_C%C3%BAcuta_11_Abril_2026_tlyhcw.mp4";
+  const ONNIVERSE_OPEN_SHAKIRA_URL =
+    "onniverso://open?url=https://res.cloudinary.com/dfsabdxup/video/upload/v1777751493/Shakira_-_MTV_Video_Vanguard_Performance_-_Live_on_The_2023_MTV_Video_Music_Awards_h6jzy5.mp4";
+  const ONNIVERSE_OPEN_SANTA_FE_KLAN_URL =
+    "onniverso://open?url=https://res.cloudinary.com/dfsabdxup/video/upload/v1777751492/Santa_Fe_Klan_-_Velorios_Video_Oficial_ovnftc.mp4";
+  const ONNIVERSE_OPEN_ANUEL_AA_URL =
+    "onniverso://open?url=https://res.cloudinary.com/dfsabdxup/video/upload/v1777751466/Anuel_en_vivo_que_nos_pas%C3%B3_mujrd0.mp4";
+  const ONNIVERSE_OPEN_ALOFOKE_URL =
+    "onniverso://open?url=https://res.cloudinary.com/dfsabdxup/video/upload/v1777751455/MICHAEL_FLORES_X_ALOFOKE_MUSIC_X_JEY_ONE_X_YOVANI_VASQUEZ_-_PODCATERA_qotzfz.mp4";
+  const ONNIVERSE_OPEN_WESTCOL_URL =
+    "onniverso://open?url=https://res.cloudinary.com/dfsabdxup/video/upload/v1777751404/AS%C3%8D_QUED%C3%93_MI_G_WAGON_REFORMADA_LUJOSA_EN_MEDELL%C3%8DN___WESTCOL_gucqxx.mp4";
+  const ONNIVERSE_OPEN_SELENA_URL =
+    "onniverso://open?url=https://res.cloudinary.com/dfsabdxup/video/upload/v1777757336/Selena_-_Bidi_Bidi_Bom_Bom_hcvcfk.mp4";
+  const ONNIVERSE_OPEN_BAD_BUNNY_URL =
+    "onniverso://open?url=https://res.cloudinary.com/dfsabdxup/video/upload/v1777757206/Arcangel_Bad_Bunny_-_La_Jumpa_Video_Oficial___SR._SANTOS_tkd2gl.mp4";
+  const ONNIVERSE_OPEN_BEELE_URL =
+    "onniverso://open?url=https://res.cloudinary.com/dfsabdxup/video/upload/v1777757253/BE%C3%89LE_-_LA_PLENA_EN_VIVO_hamldd.mp4";
+  const ONNIVERSE_OPEN_XAVI_URL =
+    "onniverso://open?url=https://res.cloudinary.com/dfsabdxup/video/upload/v1777757372/Xavi_Manuel_Turizo_-_En_Privado_Official_Video_elhacp.mp4";
+  const ONNIVERSE_OPEN_HABLANDO_HUEVADAS_URL =
+    "onniverso://open?url=https://res.cloudinary.com/dfsabdxup/video/upload/v1777757434/TE_AMO..._PERO_COMO_AMIGO_-_CLIP_RESCATANDO_HUEVADAS_osecn9.mp4";
 
   const creatorRooms = [
     ...podcastStreamers.map((streamer) => ({
@@ -63,21 +83,11 @@ const NuestrasSalasPage = () => {
     {
       id: "hablando-huevadas",
       name: "Hablando Huevadas",
-      image: "https://images.unsplash.com/photo-1492684223066-81342ee5ff30?auto=format&fit=crop&w=1400&q=80",
+      image: "/hablando-huevadas.png",
       subtitle: "Peru",
       description: "Live Show Oficial",
       status: "En Vivo",
       to: "/teatro/hablando-huevadas",
-      type: "teatro" as const,
-    },
-    {
-      id: "comediantes-vip",
-      name: "Comediantes VIP",
-      image: "https://images.unsplash.com/photo-1460723237483-7a6dc9d0b212?auto=format&fit=crop&w=1400&q=80",
-      subtitle: "Colombia",
-      description: "Ricardo Quevedo, Juanda Caribe, Lucho Torres",
-      status: "En Vivo",
-      to: "/teatro/comediantes-vip",
       type: "teatro" as const,
     },
     {
@@ -89,76 +99,6 @@ const NuestrasSalasPage = () => {
       status: "VIP",
       to: "/teatro/vive-leyendas",
       type: "teatro" as const,
-    },
-    {
-      id: "cuby-beat",
-      name: "Cuby Beat",
-      image: "https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?auto=format&fit=crop&w=1400&q=80",
-      subtitle: "Club Neon",
-      description: "Remix set y comunidad en tiempo real.",
-      status: "En Vivo",
-      to: "/podcast/cuby-beat",
-      type: "podcast" as const,
-    },
-    {
-      id: "pixel-jay",
-      name: "Pixel Jay",
-      image: "https://images.unsplash.com/photo-1521119989659-a83eee488004?auto=format&fit=crop&w=1400&q=80",
-      subtitle: "Lobby 8-Bit",
-      description: "Retro gaming talks y mini torneos live.",
-      status: "En Vivo",
-      to: "/podcast/pixel-jay",
-      type: "podcast" as const,
-    },
-    {
-      id: "sol-ritmo",
-      name: "Sol Ritmo",
-      image: "https://images.unsplash.com/photo-1544717305-2782549b5136?auto=format&fit=crop&w=1400&q=80",
-      subtitle: "Escenario Solar",
-      description: "Acusticos, entrevistas y after show.",
-      status: "En Vivo",
-      to: "/podcast/sol-ritmo",
-      type: "podcast" as const,
-    },
-    {
-      id: "kraken-flow",
-      name: "Kraken Flow",
-      image: "https://images.unsplash.com/photo-1521572267360-ee0c2909d518?auto=format&fit=crop&w=1400&q=80",
-      subtitle: "Arena Deep Bass",
-      description: "Sesion urbana con invitados sorpresa.",
-      status: "En Vivo",
-      to: "/podcast/kraken-flow",
-      type: "podcast" as const,
-    },
-    {
-      id: "nina-zen",
-      name: "Nina Zen",
-      image: "https://images.unsplash.com/photo-1524504388940-b1c1722653e1?auto=format&fit=crop&w=1400&q=80",
-      subtitle: "Sala Chill",
-      description: "Talks creativas y musica lo-fi en directo.",
-      status: "En Vivo",
-      to: "/podcast/nina-zen",
-      type: "podcast" as const,
-    },
-    {
-      id: "drako-live",
-      name: "Drako Live",
-      image: "https://images.unsplash.com/photo-1568602471122-7832951cc4c5?auto=format&fit=crop&w=1400&q=80",
-      subtitle: "Foro Titan",
-      description: "Debate, humor y clips exclusivos.",
-      status: "En Vivo",
-      to: "/podcast/drako-live",
-      type: "podcast" as const,
-    },
-    {
-      id: "alma-sonora",
-      name: "Alma Sonora",
-      image: "https://images.unsplash.com/photo-1544005313-94ddf0286df2?auto=format&fit=crop&w=1400&q=80",
-      subtitle: "Estudio Velvet",
-      description: "Concierto intimo y chat de fans.",
-      status: "En Vivo",
-      to: "/podcast/alma-sonora",
-      type: "podcast" as const,
     },
   ];
 
@@ -201,7 +141,27 @@ const NuestrasSalasPage = () => {
                         ? ONNIVERSE_OPEN_FRANCO_URL
                         : room.id === "j-balvin"
                           ? ONNIVERSE_OPEN_J_BALVIN_URL
-                          : null;
+                          : room.id === "shakira"
+                            ? ONNIVERSE_OPEN_SHAKIRA_URL
+                            : room.id === "santa-fe-klan"
+                              ? ONNIVERSE_OPEN_SANTA_FE_KLAN_URL
+                              : room.id === "anuel-aa"
+                                ? ONNIVERSE_OPEN_ANUEL_AA_URL
+                                : room.id === "alofoke"
+                                  ? ONNIVERSE_OPEN_ALOFOKE_URL
+                                  : room.id === "westcol"
+                                    ? ONNIVERSE_OPEN_WESTCOL_URL
+                                    : room.id === "selena-quintanilla"
+                                      ? ONNIVERSE_OPEN_SELENA_URL
+                                      : room.id === "bad-bunny"
+                                        ? ONNIVERSE_OPEN_BAD_BUNNY_URL
+                                        : room.id === "beele"
+                                          ? ONNIVERSE_OPEN_BEELE_URL
+                                          : room.id === "xavi"
+                                            ? ONNIVERSE_OPEN_XAVI_URL
+                                            : room.id === "hablando-huevadas"
+                                              ? ONNIVERSE_OPEN_HABLANDO_HUEVADAS_URL
+                                              : null;
 
                 return (
                   <motion.div
