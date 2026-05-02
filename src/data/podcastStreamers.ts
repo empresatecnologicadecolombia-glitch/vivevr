@@ -57,51 +57,51 @@ export const podcastStreamers: StreamerProfile[] = [
     featuredGames: ["Card Clash", "Chess Royale", "Battle Room Squad"],
   },
   {
-    id: "lyra-neon",
-    name: "Lyra Neon",
-    avatar:
-      "https://images.unsplash.com/photo-1544005313-94ddf0286df2?auto=format&fit=crop&w=640&q=80",
-    immersiveSalaName: "Aurora Hall",
-    panoramaImage:
-      "https://images.unsplash.com/photo-1534796636912-3b95b3ab5986?auto=format&fit=crop&w=4096&q=85",
-    status: "offline",
-    fallbackVideoId: "ScMzIvxBSi4",
-    loungeTitle: "Aurora Hall",
-    loungeDescription:
-      "Sala social con minijuegos cooperativos y recompensas exclusivas.",
-    ticketGrada: 2.99,
-    ticketVip: 9.99,
-    featuredGames: ["Ajedrez Social", "Pocket Monsters TCG", "Free Fire Squad Hub"],
-  },
-  {
-    id: "zen-orbit",
-    name: "Zen Orbit",
-    avatar:
-      "https://images.unsplash.com/photo-1506794778202-cad84cf45f1d?auto=format&fit=crop&w=640&q=80",
-    immersiveSalaName: "Órbita Zen",
-    panoramaImage:
-      "https://images.unsplash.com/photo-1451187580459-43490279c0fa?auto=format&fit=crop&w=4096&q=85",
-    status: "offline",
-    fallbackVideoId: "aqz-KE-bpKQ",
-    loungeTitle: "Orbit Deck",
-    loungeDescription:
-      "Charlas creativas, comunidad global y eventos surprise en VR lounge.",
-    ticketGrada: 5.99,
-    ticketVip: 19.99,
-    featuredGames: ["Neon Chess", "Collector Cards Club", "Free Arena Party"],
-  },
-  {
-    id: "luna-wave",
-    name: "Luna Wave",
-    avatar:
-      "https://images.unsplash.com/photo-1487412720507-e7ab37603c6f?auto=format&fit=crop&w=640&q=80",
-    immersiveSalaName: "Sala Aurora",
+    id: "franco-escamilla",
+    name: "Franco Escamilla",
+    avatar: "/franco-escamilla-avatar.png",
+    immersiveSalaName: "México",
     panoramaImage:
       "https://images.unsplash.com/photo-1534796636912-3b95b3ab5986?auto=format&fit=crop&w=4096&q=85",
     status: "live",
     streamType: "platform",
-    loungeTitle: "Sala Aurora",
-    loungeDescription: "Sesion musical en vivo con visuales inmersivos.",
+    fallbackVideoId: "ScMzIvxBSi4",
+    loungeTitle: "Monólogo Premium",
+    loungeDescription:
+      "Stand-up, humor y comunidad en vivo desde La posada del humor.",
+    ticketGrada: 2.99,
+    ticketVip: 9.99,
+    featuredGames: ["Stand-up VR", "Meet & Greet", "Fan Q&A"],
+  },
+  {
+    id: "j-balvin",
+    name: "J Balvin",
+    avatar: "/j-balvin-avatar.png",
+    immersiveSalaName: "Reggaeton Live",
+    panoramaImage:
+      "https://images.unsplash.com/photo-1451187580459-43490279c0fa?auto=format&fit=crop&w=4096&q=85",
+    status: "live",
+    streamType: "platform",
+    fallbackVideoId: "aqz-KE-bpKQ",
+    loungeTitle: "Escenario principal",
+    loungeDescription:
+      "Show en vivo, visuales y comunidad al ritmo del reggaeton.",
+    ticketGrada: 5.99,
+    ticketVip: 19.99,
+    featuredGames: ["Live Set VR", "Fan Zone", "After Party"],
+  },
+  {
+    id: "shakira",
+    name: "Shakira",
+    avatar: "/shakira-avatar.png",
+    immersiveSalaName: "Colombia",
+    panoramaImage:
+      "https://images.unsplash.com/photo-1534796636912-3b95b3ab5986?auto=format&fit=crop&w=4096&q=85",
+    status: "live",
+    streamType: "platform",
+    loungeTitle: "Estudio en vivo",
+    loungeDescription:
+      "Show musical, visuales inmersivos y comunidad de fans en directo.",
     ticketGrada: 3.99,
     ticketVip: 11.99,
     featuredGames: ["Live Lounge", "Q&A Fans", "After Party"],

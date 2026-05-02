@@ -44,6 +44,10 @@ const NuestrasSalasPage = () => {
     "onniverso://open?url=https://res.cloudinary.com/dfsabdxup/video/upload/v1777737430/karol_eund2g.mp4";
   const ONNIVERSE_OPEN_SILVESTRE_URL =
     "onniverso://open?url=https://res.cloudinary.com/dfsabdxup/video/upload/v1777748643/Silvestre_hxjmdi.mp4";
+  const ONNIVERSE_OPEN_FRANCO_URL =
+    "onniverso://open?url=https://res.cloudinary.com/dfsabdxup/video/upload/v1777751512/Franco_Escamilla.-_Mon%C3%B3logo__Ol%C3%ADmpicos_de_Invierno__hmo9ss.mp4";
+  const ONNIVERSE_OPEN_J_BALVIN_URL =
+    "onniverso://open?url=https://res.cloudinary.com/dfsabdxup/video/upload/v1777751506/57_-_JBalvin_-_Ciudad_Primavera_C%C3%BAcuta_11_Abril_2026_tlyhcw.mp4";
 
   const creatorRooms = [
     ...podcastStreamers.map((streamer) => ({
@@ -56,16 +60,6 @@ const NuestrasSalasPage = () => {
       to: `/podcast/${streamer.id}`,
       type: "podcast" as const,
     })),
-    {
-      id: "franco-escamilla",
-      name: "Franco Escamilla",
-      image: "https://images.unsplash.com/photo-1516307365426-bea591f05011?auto=format&fit=crop&w=1400&q=80",
-      subtitle: "Mexico",
-      description: "Monologo Premium",
-      status: "En Vivo",
-      to: "/teatro/franco-escamilla",
-      type: "teatro" as const,
-    },
     {
       id: "hablando-huevadas",
       name: "Hablando Huevadas",
@@ -95,16 +89,6 @@ const NuestrasSalasPage = () => {
       status: "VIP",
       to: "/teatro/vive-leyendas",
       type: "teatro" as const,
-    },
-    {
-      id: "luna-wave",
-      name: "Luna Wave",
-      image: "https://images.unsplash.com/photo-1487412720507-e7ab37603c6f?auto=format&fit=crop&w=1400&q=80",
-      subtitle: "Sala Aurora",
-      description: "Sesion musical en vivo con visuales inmersivos.",
-      status: "En Vivo",
-      to: "/podcast/luna-wave",
-      type: "podcast" as const,
     },
     {
       id: "cuby-beat",
@@ -213,7 +197,11 @@ const NuestrasSalasPage = () => {
                     ? ONNIVERSE_OPEN_KAROL_URL
                     : room.id === "axon-king"
                       ? ONNIVERSE_OPEN_SILVESTRE_URL
-                      : null;
+                      : room.id === "franco-escamilla"
+                        ? ONNIVERSE_OPEN_FRANCO_URL
+                        : room.id === "j-balvin"
+                          ? ONNIVERSE_OPEN_J_BALVIN_URL
+                          : null;
 
                 return (
                   <motion.div
