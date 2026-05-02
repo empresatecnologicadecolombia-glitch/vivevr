@@ -1,6 +1,6 @@
-import { Suspense, useEffect, useLayoutEffect, useMemo, useRef, useState } from "react";
+import { Suspense, useEffect, useMemo, useRef, useState } from "react";
 import { Canvas, useFrame, useLoader, useThree } from "@react-three/fiber";
-import { DeviceOrientationControls, OrbitControls } from "@react-three/drei";
+import { Billboard, DeviceOrientationControls, OrbitControls } from "@react-three/drei";
 import * as THREE from "three";
 import { Maximize2, Minimize2 } from "lucide-react";
 import { useLocation } from "react-router-dom";
@@ -10,6 +10,14 @@ import {
   normalizeStoredEnvironmentId,
   type MiMundoEnvironmentId,
 } from "@/data/miMundoEnvironments";
+import {
+  MAX_WEBGL_PIXEL_RATIO,
+  VR_STEREO_PIXEL_RATIO,
+  applyPixelRatioCap,
+  getAdaptiveSphereSegments,
+  isMobileCoarseDevice,
+} from "@/lib/webglRendererPrefs";
+import { useVrModeActive } from "@/hooks/useVrModeActive";
 
 /** Texturas Tierra alta resolucion (three.js, estilo vista espacial tipo Artemis); radio sin cambios. */
 const PLANETS = "https://cdn.jsdelivr.net/gh/mrdoob/three.js@dev/examples/textures/planets";
@@ -20,7 +28,6 @@ const EARTH_CLOUDS = `${PLANETS}/earth_clouds_1024.png`;
 
 /** Tierra y luna al 50% del tamano anterior. */
 const CENTRAL_SPHERE_RADIUS = 0.925;
-const CENTRAL_SPHERE_SEGMENTS = 120;
 
 /** Textura ligera 360° de estadio de futbol (equirectangular, optimizada para mobile). */
 const STADIUM_PANORAMA_URL =
@@ -40,13 +47,6 @@ const SECOND_MATCH_VIDEO_URL =
 const WINDOWS11_DESKTOP_URL =
   "https://images.unsplash.com/photo-1633419461186-7d40a38105ec?auto=format&fit=crop&w=1600&q=80";
 
-type ScreenRefs = {
-  main: React.RefObject<THREE.Mesh>;
-  second: React.RefObject<THREE.Mesh>;
-  social: React.RefObject<THREE.Mesh>;
-  system: React.RefObject<THREE.Mesh>;
-};
-
 function createVideoTexture(url: string) {
   if (typeof document === "undefined") return { video: null, texture: null as THREE.VideoTexture | null };
   const video = document.createElement("video");
@@ -64,7 +64,15 @@ function createVideoTexture(url: string) {
   return { video, texture };
 }
 
-function MoonScreenCluster({ visible, screenRefs }: { visible: boolean; screenRefs: ScreenRefs }) {
+function MoonScreenCluster({
+  visible,
+  screenRefs,
+  vrMirrorFlat,
+}: {
+  visible: boolean;
+  /** Mismo canvas 2D: planos que miran a la cámara, sin profundidad de escena. */
+  vrMirrorFlat: boolean;
+}) {
   const clusterRef = useRef<THREE.Group>(null);
   const [mainVideo] = useState(() => createVideoTexture(FREE_MATCH_VIDEO_URL));
   const [secondVideo] = useState(() => createVideoTexture(SECOND_MATCH_VIDEO_URL));
@@ -221,22 +229,59 @@ function MoonScreenCluster({ visible, screenRefs }: { visible: boolean; screenRe
     void video.play().catch(() => undefined);
   };
 
+  if (vrMirrorFlat) {
+    return (
+      <group ref={clusterRef}>
+        <Billboard position={[0, 0.18, 1.35]} follow>
+          <mesh renderOrder={6}>
+            <planeGeometry args={[2.9, 1.72]} />
+            <meshBasicMaterial map={socialTexture ?? undefined} toneMapped={false} side={THREE.DoubleSide} />
+          </mesh>
+        </Billboard>
+        <Billboard position={[0, 0.18, -1.35]} follow>
+          <mesh
+            renderOrder={6}
+            onPointerDown={(event) => {
+              event.stopPropagation();
+              enableAudioFor(secondVideo.video);
+            }}
+          >
+            <planeGeometry args={[2.9, 1.72]} />
+            <meshBasicMaterial map={secondVideo.texture ?? undefined} toneMapped={false} side={THREE.DoubleSide} />
+          </mesh>
+        </Billboard>
+        <Billboard position={[-1.35, 0.18, 0]} follow>
+          <mesh
+            renderOrder={6}
+            onPointerDown={(event) => {
+              event.stopPropagation();
+              enableAudioFor(mainVideo.video);
+            }}
+          >
+            <planeGeometry args={[2.9, 1.72]} />
+            <meshBasicMaterial map={mainVideo.texture ?? undefined} toneMapped={false} side={THREE.DoubleSide} />
+          </mesh>
+        </Billboard>
+        <Billboard position={[1.35, 0.18, 0]} follow>
+          <mesh renderOrder={6}>
+            <planeGeometry args={[3, 1.8]} />
+            <meshBasicMaterial map={systemTexture ?? undefined} toneMapped={false} side={THREE.DoubleSide} />
+          </mesh>
+        </Billboard>
+      </group>
+    );
+  }
+
   return (
     <group ref={clusterRef}>
       <mesh
-        ref={screenRefs.main}
         position={[0, 0.18, 1.35]}
         renderOrder={6}
-        onPointerDown={(event) => {
-          event.stopPropagation();
-          enableAudioFor(mainVideo.video);
-        }}
       >
-        <planeGeometry args={[1.45, 0.86]} />
-        <meshBasicMaterial map={mainVideo.texture ?? undefined} toneMapped={false} side={THREE.DoubleSide} />
+        <planeGeometry args={[2.9, 1.72]} />
+        <meshBasicMaterial map={socialTexture ?? undefined} toneMapped={false} side={THREE.DoubleSide} />
       </mesh>
       <mesh
-        ref={screenRefs.second}
         position={[0, 0.18, -1.35]}
         rotation={[0, Math.PI, 0]}
         renderOrder={6}
@@ -245,20 +290,27 @@ function MoonScreenCluster({ visible, screenRefs }: { visible: boolean; screenRe
           enableAudioFor(secondVideo.video);
         }}
       >
-        <planeGeometry args={[1.45, 0.86]} />
+        <planeGeometry args={[2.9, 1.72]} />
         <meshBasicMaterial map={secondVideo.texture ?? undefined} toneMapped={false} side={THREE.DoubleSide} />
       </mesh>
-      <mesh ref={screenRefs.social} position={[-1.35, 0.18, 0]} rotation={[0, -Math.PI / 2, 0]} renderOrder={6}>
-        <planeGeometry args={[1.45, 0.86]} />
-        <meshBasicMaterial map={socialTexture ?? undefined} toneMapped={false} side={THREE.DoubleSide} />
+      <mesh
+        position={[-1.35, 0.18, 0]}
+        rotation={[0, -Math.PI / 2, 0]}
+        renderOrder={6}
+        onPointerDown={(event) => {
+          event.stopPropagation();
+          enableAudioFor(mainVideo.video);
+        }}
+      >
+        <planeGeometry args={[2.9, 1.72]} />
+        <meshBasicMaterial map={mainVideo.texture ?? undefined} toneMapped={false} side={THREE.DoubleSide} />
       </mesh>
       <mesh
-        ref={screenRefs.system}
         position={[1.35, 0.18, 0]}
         rotation={[0, Math.PI / 2, 0]}
         renderOrder={6}
       >
-        <planeGeometry args={[1.5, 0.9]} />
+        <planeGeometry args={[3, 1.8]} />
         <meshBasicMaterial map={systemTexture ?? undefined} toneMapped={false} side={THREE.DoubleSide} />
       </mesh>
     </group>
@@ -267,16 +319,22 @@ function MoonScreenCluster({ visible, screenRefs }: { visible: boolean; screenRe
 
 function OrbitingMoon({
   moonRef,
+  simpleGpu,
+  vrStereo,
 }: {
   moonRef: React.RefObject<THREE.Mesh>;
+  simpleGpu: boolean;
+  vrStereo: boolean;
 }) {
   const pivotRef = useRef<THREE.Group>(null);
   const moonTexture = useLoader(THREE.TextureLoader, MOON_TEXTURE_URL);
 
+  const moonSeg = useMemo(() => getAdaptiveSphereSegments(vrStereo), [vrStereo]);
+
   useEffect(() => {
     moonTexture.colorSpace = THREE.SRGBColorSpace;
-    moonTexture.anisotropy = 8;
-  }, [moonTexture]);
+    moonTexture.anisotropy = vrStereo ? 1 : simpleGpu ? 2 : 8;
+  }, [moonTexture, simpleGpu, vrStereo]);
 
   useFrame((_, delta) => {
     if (pivotRef.current) {
@@ -286,78 +344,27 @@ function OrbitingMoon({
 
   return (
     <group ref={pivotRef} rotation={[0.18, 0, 0]}>
-      <mesh ref={moonRef} position={[MOON_ORBIT_RADIUS, -1.24, 0]}>
-        <sphereGeometry args={[MOON_RADIUS, 64, 64]} />
-        <meshStandardMaterial map={moonTexture} roughness={1} metalness={0} transparent opacity={1} />
+      <mesh ref={moonRef} position={[MOON_ORBIT_RADIUS, -1.24, 0]} key={`moon-${moonSeg}`}>
+        <sphereGeometry args={[MOON_RADIUS, moonSeg, moonSeg]} />
+        <meshBasicMaterial map={moonTexture} toneMapped transparent opacity={1} />
       </mesh>
     </group>
   );
 }
 
-function MoonOcclusionController({
-  moonRef,
-  screenRefs,
-  enabled,
-}: {
-  moonRef: React.RefObject<THREE.Mesh>;
-  screenRefs: ScreenRefs;
-  enabled: boolean;
-}) {
-  const moonWorldPos = useMemo(() => new THREE.Vector3(), []);
-  const screenWorldPos = useMemo(() => new THREE.Vector3(), []);
-  const moonNdc = useMemo(() => new THREE.Vector3(), []);
-  const screenNdc = useMemo(() => new THREE.Vector3(), []);
-
-  useFrame(({ camera }) => {
-    const moonMesh = moonRef.current;
-    if (!moonMesh) return;
-
-    const moonMaterial = moonMesh.material as THREE.MeshStandardMaterial;
-    if (!enabled) {
-      moonMaterial.transparent = true;
-      moonMaterial.opacity = THREE.MathUtils.lerp(moonMaterial.opacity, 1, 0.16);
-      return;
-    }
-
-    moonMesh.getWorldPosition(moonWorldPos);
-    moonNdc.copy(moonWorldPos).project(camera);
-    const moonDistance = camera.position.distanceTo(moonWorldPos);
-    const projectedMoonRadius = THREE.MathUtils.clamp((MOON_RADIUS / moonDistance) * 1.55, 0.05, 0.34);
-
-    const screens = [screenRefs.main.current, screenRefs.second.current, screenRefs.social.current, screenRefs.system.current].filter(
-      Boolean,
-    ) as THREE.Mesh[];
-
-    const shouldFade = screens.some((screenMesh) => {
-      screenMesh.getWorldPosition(screenWorldPos);
-      screenNdc.copy(screenWorldPos).project(camera);
-      const screenDistance = camera.position.distanceTo(screenWorldPos);
-      const projectedDistance = Math.hypot(moonNdc.x - screenNdc.x, moonNdc.y - screenNdc.y);
-      const overlapsScreen = projectedDistance < projectedMoonRadius + 0.14;
-      const moonInFront = moonDistance < screenDistance;
-      return overlapsScreen && moonInFront;
-    });
-
-    const targetOpacity = shouldFade ? 0.2 : 1;
-    moonMaterial.transparent = true;
-    moonMaterial.opacity = THREE.MathUtils.lerp(moonMaterial.opacity, targetOpacity, 0.2);
-  });
-
-  return null;
-}
-
-function SpaceBackground({ roomTextureUrl }: { roomTextureUrl: string }) {
+function SpaceBackground({ roomTextureUrl, vrStereo }: { roomTextureUrl: string; vrStereo: boolean }) {
   const texture = useLoader(THREE.TextureLoader, roomTextureUrl);
   const { scene } = useThree();
 
   useEffect(() => {
     texture.colorSpace = THREE.SRGBColorSpace;
     texture.mapping = THREE.EquirectangularReflectionMapping;
+    texture.anisotropy = vrStereo ? 1 : 8;
     scene.background = texture;
     return () => {
       if (scene.background === texture) scene.background = null;
     };
-  }, [scene, texture]);
+  }, [scene, texture, vrStereo]);
 
   return null;
 }
@@ -393,7 +400,13 @@ function specularToRoughnessTexture(specular: THREE.Texture): THREE.CanvasTextur
 }
 
 /** Planeta Tierra central: texturas/material; posicion, radio y orbita intactos. */
-function CentralEarth({ onToggleScreens }: { onToggleScreens: () => void }) {
+function CentralEarth({
+  simpleGpu,
+  vrStereo,
+}: {
+  simpleGpu: boolean;
+  vrStereo: boolean;
+}) {
   const earthRef = useRef<THREE.Group>(null);
   const [dayMap, normalMap, specularMap, cloudsMap] = useLoader(THREE.TextureLoader, [
     EARTH_DAY_4K,
@@ -403,25 +416,27 @@ function CentralEarth({ onToggleScreens }: { onToggleScreens: () => void }) {
   ]);
 
   const roughnessMap = useMemo(
-    () => specularToRoughnessTexture(specularMap),
-    [specularMap],
+    () => (simpleGpu ? null : specularToRoughnessTexture(specularMap)),
+    [specularMap, simpleGpu],
   );
 
   useEffect(() => {
-    return () => roughnessMap.dispose();
+    return () => roughnessMap?.dispose();
   }, [roughnessMap]);
 
   useEffect(() => {
+    const antisoBase = vrStereo ? 2 : simpleGpu ? 4 : 16;
+    const antisoCloud = vrStereo ? 1 : simpleGpu ? 2 : 12;
     dayMap.colorSpace = THREE.SRGBColorSpace;
-    dayMap.anisotropy = 16;
+    dayMap.anisotropy = antisoBase;
     dayMap.minFilter = THREE.LinearMipmapLinearFilter;
     dayMap.magFilter = THREE.LinearFilter;
     normalMap.colorSpace = THREE.NoColorSpace;
-    normalMap.anisotropy = 16;
+    normalMap.anisotropy = antisoBase;
     specularMap.colorSpace = THREE.NoColorSpace;
     cloudsMap.colorSpace = THREE.SRGBColorSpace;
-    cloudsMap.anisotropy = 12;
-  }, [dayMap, normalMap, specularMap, cloudsMap]);
+    cloudsMap.anisotropy = antisoCloud;
+  }, [dayMap, normalMap, specularMap, cloudsMap, simpleGpu, vrStereo]);
 
   useFrame((_, delta) => {
     if (earthRef.current) {
@@ -429,35 +444,51 @@ function CentralEarth({ onToggleScreens }: { onToggleScreens: () => void }) {
     }
   });
 
+  const seg = useMemo(() => getAdaptiveSphereSegments(vrStereo), [vrStereo]);
+
+  if (simpleGpu) {
+    return (
+      <group ref={earthRef} key={`earth-s-${seg}`}>
+        <mesh renderOrder={0}>
+          <sphereGeometry args={[CENTRAL_SPHERE_RADIUS, seg, seg]} />
+          <meshBasicMaterial map={dayMap} toneMapped />
+        </mesh>
+        <mesh renderOrder={1} scale={1.0018}>
+          <sphereGeometry args={[CENTRAL_SPHERE_RADIUS, seg, seg]} />
+          <meshBasicMaterial map={cloudsMap} transparent opacity={0.92} depthWrite={false} toneMapped />
+        </mesh>
+        <mesh renderOrder={2} scale={1.024}>
+          <sphereGeometry args={[CENTRAL_SPHERE_RADIUS, seg, seg]} />
+          <meshBasicMaterial
+            color="#6ab4ff"
+            transparent
+            opacity={0.085}
+            depthWrite={false}
+            side={THREE.FrontSide}
+            blending={THREE.NormalBlending}
+          />
+        </mesh>
+      </group>
+    );
+  }
+
   return (
-    <group ref={earthRef}>
-      <mesh
-        renderOrder={0}
-        onPointerDown={(event) => {
-          event.stopPropagation();
-          onToggleScreens();
-        }}
-      >
-        <sphereGeometry args={[CENTRAL_SPHERE_RADIUS, CENTRAL_SPHERE_SEGMENTS, CENTRAL_SPHERE_SEGMENTS]} />
-        <meshPhysicalMaterial
+    <group ref={earthRef} key={`earth-hd-${seg}`}>
+      <mesh renderOrder={0}>
+        <sphereGeometry args={[CENTRAL_SPHERE_RADIUS, seg, seg]} />
+        <meshStandardMaterial
           map={dayMap}
           normalMap={normalMap}
           normalScale={new THREE.Vector2(0.045, 0.045)}
-          roughnessMap={roughnessMap}
+          roughnessMap={roughnessMap ?? undefined}
           roughness={1}
           metalness={0.06}
-          clearcoat={0.16}
-          clearcoatRoughness={0.34}
           envMapIntensity={0}
           toneMapped
-          sheen={0.18}
-          sheenColor="#2d6aa8"
-          sheenRoughness={0.42}
         />
       </mesh>
-      {/* Nubes sobre la superficie (misma esfera base, escala minima). */}
       <mesh renderOrder={1} scale={1.0018}>
-        <sphereGeometry args={[CENTRAL_SPHERE_RADIUS, 96, 96]} />
+        <sphereGeometry args={[CENTRAL_SPHERE_RADIUS, seg, seg]} />
         <meshStandardMaterial
           map={cloudsMap}
           transparent
@@ -469,9 +500,8 @@ function CentralEarth({ onToggleScreens }: { onToggleScreens: () => void }) {
           toneMapped
         />
       </mesh>
-      {/* Halo atmosferico suave (capa exterior). */}
       <mesh renderOrder={2} scale={1.024}>
-        <sphereGeometry args={[CENTRAL_SPHERE_RADIUS, 72, 56]} />
+        <sphereGeometry args={[CENTRAL_SPHERE_RADIUS, seg, seg]} />
         <meshBasicMaterial
           color="#6ab4ff"
           transparent
@@ -490,68 +520,31 @@ function DeviceGyroController({ enabled }: { enabled: boolean }) {
   return <DeviceOrientationControls />;
 }
 
-/**
- * Modo gafas: dos mitades idénticas (L/R) con la misma cámara, así giroscopio y
- * controles afectan una sola cámara y las dos vistas se mueven a la par.
- * La línea negra central se dibuja en el DOM.
- */
-function GlassesSplitRenderer({ active }: { active: boolean }) {
-  const { gl, camera, invalidate } = useThree();
+/** Stereo VR / capture mode: DPR 1, sin tone mapping tipo ACES (menos trabajo por frame). */
+function VrStereoPerfSync({ active }: { active: boolean }) {
+  const { gl, invalidate } = useThree();
+  const savedTone = useRef<{ tm: THREE.ToneMapping; exp: number } | null>(null);
 
   useEffect(() => {
+    if (active) {
+      savedTone.current = { tm: gl.toneMapping, exp: gl.toneMappingExposure };
+      gl.setPixelRatio(VR_STEREO_PIXEL_RATIO);
+      gl.toneMapping = THREE.NoToneMapping;
+      gl.toneMappingExposure = 1;
+      gl.shadowMap.enabled = false;
+    } else {
+      if (savedTone.current) {
+        gl.toneMapping = savedTone.current.tm;
+        gl.toneMappingExposure = savedTone.current.exp;
+      } else {
+        gl.toneMapping = THREE.ACESFilmicToneMapping;
+        gl.toneMappingExposure = 0.96;
+      }
+      applyPixelRatioCap(gl);
+      gl.shadowMap.enabled = false;
+    }
     invalidate();
-  }, [active, invalidate]);
-
-  useLayoutEffect(() => {
-    const renderer = gl;
-    const orig = renderer.render.bind(renderer);
-
-    if (!active) {
-      renderer.render = orig;
-      return () => {
-        renderer.render = orig;
-      };
-    }
-
-    const cam = camera as THREE.PerspectiveCamera;
-    if (!("aspect" in cam) || !cam.isPerspectiveCamera) {
-      return;
-    }
-
-    renderer.render = (scene, c) => {
-      const cAny = c as THREE.PerspectiveCamera;
-      if (!cAny.isPerspectiveCamera) {
-        return orig(scene, c);
-      }
-      const w = renderer.domElement.width;
-      const h = renderer.domElement.height;
-      const leftW = Math.floor(w / 2);
-      const rightW = w - leftW;
-
-      cAny.aspect = leftW / h;
-      cAny.updateProjectionMatrix();
-
-      renderer.setScissorTest(true);
-      renderer.setViewport(0, 0, leftW, h);
-      renderer.setScissor(0, 0, leftW, h);
-      orig(scene, c);
-      renderer.setViewport(leftW, 0, rightW, h);
-      renderer.setScissor(leftW, 0, rightW, h);
-      orig(scene, c);
-
-      cAny.aspect = w / h;
-      cAny.updateProjectionMatrix();
-      renderer.setScissorTest(false);
-    };
-
-    return () => {
-      renderer.render = orig;
-      if (cam.isPerspectiveCamera) {
-        cam.aspect = renderer.domElement.width / renderer.domElement.height;
-        cam.updateProjectionMatrix();
-      }
-    };
-  }, [active, gl, camera]);
+  }, [active, gl, invalidate]);
 
   return null;
 }
@@ -571,13 +564,8 @@ const MiMundoVRSection = () => {
   const sectionRef = useRef<HTMLElement | null>(null);
   const [isFullscreen, setIsFullscreen] = useState(false);
   const [gyroEnabled, setGyroEnabled] = useState(false);
-  const [glassesMode, setGlassesMode] = useState(false);
-  const [screensVisible, setScreensVisible] = useState(false);
+  const vrStereoActive = useVrModeActive();
   const moonRef = useRef<THREE.Mesh>(null);
-  const screenMainRef = useRef<THREE.Mesh>(null);
-  const screenSecondRef = useRef<THREE.Mesh>(null);
-  const screenSocialRef = useRef<THREE.Mesh>(null);
-  const screenSystemRef = useRef<THREE.Mesh>(null);
   const environmentId = useMemo<MiMundoEnvironmentId>(() => {
     if (typeof window === "undefined") return "lobby";
     return readStoredEnvironmentId() ?? "lobby";
@@ -585,10 +573,7 @@ const MiMundoVRSection = () => {
 
   const roomMode = useMemo(() => getRoomMode(environmentId), [environmentId]);
 
-  const isMobile = useMemo(
-    () => typeof navigator !== "undefined" && /android|iphone|ipad|ipod/i.test(navigator.userAgent),
-    [],
-  );
+  const isMobileCoarse = useMemo(() => isMobileCoarseDevice(), []);
 
   const enableGyroscope = async () => {
     if (typeof window === "undefined") return;
@@ -604,13 +589,6 @@ const MiMundoVRSection = () => {
 
     setGyroEnabled(true);
   };
-
-  useEffect(() => {
-    const state = location.state as { openFreeMatchScreen?: boolean } | null;
-    if (state?.openFreeMatchScreen) {
-      setScreensVisible(true);
-    }
-  }, [location.state]);
 
   useEffect(() => {
     const onChange = () => {
@@ -657,65 +635,67 @@ const MiMundoVRSection = () => {
       <div className="absolute inset-0 z-0">
         <div className="absolute inset-0">
         <Canvas
-          dpr={[1, 2]}
+          dpr={vrStereoActive ? VR_STEREO_PIXEL_RATIO : [1, MAX_WEBGL_PIXEL_RATIO]}
           gl={{
-            antialias: true,
+            antialias: vrStereoActive ? false : !isMobileCoarse,
+            alpha: false,
             powerPreference: "high-performance",
             toneMapping: THREE.ACESFilmicToneMapping,
             toneMappingExposure: 0.96,
           }}
+          frameloop="always"
+          onCreated={({ gl }) => {
+            applyPixelRatioCap(gl);
+          }}
           camera={{ position: [0, 0, 5.8], fov: 62, near: 0.1, far: 2000 }}
         >
           <color attach="background" args={roomMode === "equirect_interior" ? ["#0c0812"] : ["#02030a"]} />
-          {roomMode === "equirect_interior" ? (
-            <>
-              <hemisphereLight args={["#fce8f4", "#181018"]} intensity={0.52} />
-              <ambientLight intensity={0.34} color="#fff8fc" />
-              <directionalLight position={[5, 7, 4]} intensity={1.58} color="#fff5f8" />
-              <directionalLight position={[-5, -7, -4]} intensity={1.1} color="#fff5f8" />
-            </>
-          ) : (
-            <>
-              <ambientLight intensity={0.36} />
-              <directionalLight position={[6, 2.5, 2]} intensity={2.02} color="#eef3fb" />
-              <directionalLight position={[-6, -2.5, -2]} intensity={1.18} color="#eef3fb" />
-            </>
-          )}
+          {/* VR espejo 2D: sin luces (solo meshBasic + fondo); evita sombras y shading */}
+          {!vrStereoActive &&
+            (isMobileCoarse ? (
+              <ambientLight intensity={0.55} />
+            ) : roomMode === "equirect_interior" ? (
+              <>
+                <hemisphereLight args={["#fce8f4", "#181018"]} intensity={0.52} />
+                <ambientLight intensity={0.34} color="#fff8fc" />
+                <directionalLight position={[5, 7, 4]} intensity={1.58} color="#fff5f8" />
+                <directionalLight position={[-5, -7, -4]} intensity={1.1} color="#fff5f8" />
+              </>
+            ) : (
+              <>
+                <ambientLight intensity={0.36} />
+                <directionalLight position={[6, 2.5, 2]} intensity={2.02} color="#eef3fb" />
+                <directionalLight position={[-6, -2.5, -2]} intensity={1.18} color="#eef3fb" />
+              </>
+            ))}
 
-          {/* Fondo 360 fijo: estadio de futbol profesional (sustituye los modos previos). */}
+          {/* Fondo: solo textura en scene.background (0 geometría de esfera). */}
           <Suspense fallback={null}>
-            <SpaceBackground roomTextureUrl={STADIUM_PANORAMA_URL} />
+            <SpaceBackground roomTextureUrl={STADIUM_PANORAMA_URL} vrStereo={vrStereoActive} />
           </Suspense>
           <Suspense fallback={null}>
-            <CentralEarth onToggleScreens={() => setScreensVisible((prev) => !prev)} />
+            <CentralEarth
+              simpleGpu={isMobileCoarse || vrStereoActive}
+              vrStereo={vrStereoActive}
+            />
           </Suspense>
           <Suspense fallback={null}>
-            <OrbitingMoon moonRef={moonRef} />
+            <OrbitingMoon
+              moonRef={moonRef}
+              simpleGpu={isMobileCoarse || vrStereoActive}
+              vrStereo={vrStereoActive}
+            />
           </Suspense>
           <Suspense fallback={null}>
             <MoonScreenCluster
-              visible={screensVisible}
-              screenRefs={{
-                main: screenMainRef,
-                second: screenSecondRef,
-                social: screenSocialRef,
-                system: screenSystemRef,
-              }}
+              visible={false}
+              vrMirrorFlat={vrStereoActive}
             />
           </Suspense>
-          <MoonOcclusionController
-            moonRef={moonRef}
-            enabled={screensVisible}
-            screenRefs={{
-              main: screenMainRef,
-              second: screenSecondRef,
-              social: screenSocialRef,
-              system: screenSystemRef,
-            }}
-          />
 
           <OrbitControls
             makeDefault
+            enabled={!vrStereoActive && !gyroEnabled}
             target={[0, 0, 0]}
             enablePan={false}
             enableDamping
@@ -726,19 +706,13 @@ const MiMundoVRSection = () => {
             minPolarAngle={0.02}
             maxPolarAngle={Math.PI - 0.02}
           />
-          <DeviceGyroController enabled={gyroEnabled} />
-          <GlassesSplitRenderer active={glassesMode} />
+          <DeviceGyroController enabled={!vrStereoActive && gyroEnabled} />
+          <VrStereoPerfSync active={vrStereoActive} />
         </Canvas>
-        {glassesMode && (
-          <div
-            className="pointer-events-none absolute inset-y-0 left-1/2 z-10 w-px -translate-x-1/2 bg-black"
-            aria-hidden
-          />
-        )}
         </div>
       </div>
 
-      {isMobile && (
+      {isMobileCoarse && (
         <button
           type="button"
           onClick={toggleFullscreen}
@@ -755,15 +729,6 @@ const MiMundoVRSection = () => {
         </button>
       )}
 
-      {isMobile && (
-        <button
-          type="button"
-          onClick={enableGyroscope}
-          className="absolute left-1/2 top-20 z-30 -translate-x-1/2 rounded-full border border-cyan-300/50 bg-black/45 px-5 py-2 text-xs font-display font-semibold uppercase tracking-wider text-cyan-100 backdrop-blur-md transition hover:bg-black/65"
-        >
-          Activar giroscopio
-        </button>
-      )}
     </section>
   );
 };
