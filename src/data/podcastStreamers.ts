@@ -187,6 +187,22 @@ export const podcastStreamers: StreamerProfile[] = [
     featuredGames: ["Live Hits", "Fan Zone", "Tribute Night"],
   },
   {
+    id: "arcangel",
+    name: "Arcángel",
+    avatar: "/arcangel-avatar.png",
+    immersiveSalaName: "Puerto Rico",
+    panoramaImage:
+      "https://images.unsplash.com/photo-1451187580459-43490279c0fa?auto=format&fit=crop&w=4096&q=85",
+    status: "live",
+    streamType: "platform",
+    loungeTitle: "Trap & reggaeton",
+    loungeDescription:
+      "Urbano, trap y comunidad en directo con La Maravilla.",
+    ticketGrada: 3.99,
+    ticketVip: 11.99,
+    featuredGames: ["Live Set", "Fan Zone", "After Party"],
+  },
+  {
     id: "bad-bunny",
     name: "Bad Bunny",
     avatar: "/bad-bunny-avatar.png",
@@ -195,9 +211,10 @@ export const podcastStreamers: StreamerProfile[] = [
       "https://images.unsplash.com/photo-1451187580459-43490279c0fa?auto=format&fit=crop&w=4096&q=85",
     status: "live",
     streamType: "platform",
-    loungeTitle: "World's Hottest Tour",
+    fallbackVideoId: "ScMzIvxBSi4",
+    loungeTitle: "Un verano sin ti",
     loungeDescription:
-      "Reggaeton y trap en vivo con la comunidad global en directo.",
+      "Trap, reggaeton y comunidad global en vivo con el conejo malo.",
     ticketGrada: 3.99,
     ticketVip: 11.99,
     featuredGames: ["Live Set", "Fan Zone", "After Party"],
@@ -234,6 +251,23 @@ export const podcastStreamers: StreamerProfile[] = [
     ticketGrada: 4.49,
     ticketVip: 12.49,
     featuredGames: ["Live Session", "Fan Zone", "Fan Chat"],
+  },
+  {
+    id: "daddy-yankee",
+    name: "Daddy Yankee",
+    avatar: "/daddy-yankee-avatar.png",
+    immersiveSalaName: "Puerto Rico",
+    panoramaImage:
+      "https://images.unsplash.com/photo-1550751827-4bd374c3f58b?auto=format&fit=crop&w=4096&q=85",
+    status: "live",
+    streamType: "platform",
+    fallbackVideoId: "ScMzIvxBSi4",
+    loungeTitle: "Big Boss Lounge",
+    loungeDescription:
+      "Reggaeton clasico, hits urbanos y comunidad en directo al ritmo del Big Boss.",
+    ticketGrada: 5.49,
+    ticketVip: 15.99,
+    featuredGames: ["Hits VR", "Fan Zone", "After Party"],
   },
 ];
 

@@ -60,14 +60,20 @@ const NuestrasSalasPage = () => {
     "onniverso://open?url=https://res.cloudinary.com/dfsabdxup/video/upload/v1777751404/AS%C3%8D_QUED%C3%93_MI_G_WAGON_REFORMADA_LUJOSA_EN_MEDELL%C3%8DN___WESTCOL_gucqxx.mp4";
   const ONNIVERSE_OPEN_SELENA_URL =
     "onniverso://open?url=https://res.cloudinary.com/dfsabdxup/video/upload/v1777757336/Selena_-_Bidi_Bidi_Bom_Bom_hcvcfk.mp4";
-  const ONNIVERSE_OPEN_BAD_BUNNY_URL =
+  const ONNIVERSE_OPEN_ARCANGEL_URL =
     "onniverso://open?url=https://res.cloudinary.com/dfsabdxup/video/upload/v1777757206/Arcangel_Bad_Bunny_-_La_Jumpa_Video_Oficial___SR._SANTOS_tkd2gl.mp4";
+  const ONNIVERSE_OPEN_BAD_BUNNY_URL =
+    "onniverso://open?url=https://res.cloudinary.com/dfsabdxup/video/upload/v1777757420/Bad_Bunny_s_Apple_Music_Super_Bowl_Halftime_Show_jfvgow.mp4";
   const ONNIVERSE_OPEN_BEELE_URL =
     "onniverso://open?url=https://res.cloudinary.com/dfsabdxup/video/upload/v1777757253/BE%C3%89LE_-_LA_PLENA_EN_VIVO_hamldd.mp4";
   const ONNIVERSE_OPEN_XAVI_URL =
     "onniverso://open?url=https://res.cloudinary.com/dfsabdxup/video/upload/v1777757372/Xavi_Manuel_Turizo_-_En_Privado_Official_Video_elhacp.mp4";
   const ONNIVERSE_OPEN_HABLANDO_HUEVADAS_URL =
     "onniverso://open?url=https://res.cloudinary.com/dfsabdxup/video/upload/v1777757434/TE_AMO..._PERO_COMO_AMIGO_-_CLIP_RESCATANDO_HUEVADAS_osecn9.mp4";
+  const ONNIVERSE_OPEN_MICHAEL_JACKSON_URL =
+    "onniverso://open?url=https://res.cloudinary.com/dfsabdxup/video/upload/v1777757437/Michael_Jackson_-_Billie_Jean_-_Live_Munich_1997_-_Widescreen_HD_gei36m.mp4";
+  const ONNIVERSE_OPEN_DADDY_YANKEE_URL =
+    "onniverso://open?url=https://res.cloudinary.com/dfsabdxup/video/upload/v1777757419/Daddy_Yankee_-_Homenaje_Premios_lo_Nuestro_2019_yvgwjk.mp4";
 
   const creatorRooms = [
     ...podcastStreamers.map((streamer) => ({
@@ -91,13 +97,13 @@ const NuestrasSalasPage = () => {
       type: "teatro" as const,
     },
     {
-      id: "vive-leyendas",
-      name: "Vive Leyendas",
-      image: "https://images.unsplash.com/photo-1497032628192-86f99bcd76bc?auto=format&fit=crop&w=1400&q=80",
-      subtitle: "Canal Curado",
-      description: "Rescate de talentos iconicos",
+      id: "michael-jackson",
+      name: "Michael Jackson",
+      image: "/michael-jackson-avatar.png",
+      subtitle: "USA",
+      description: "Show inmersivo y hits eternos",
       status: "VIP",
-      to: "/teatro/vive-leyendas",
+      to: "/teatro/michael-jackson",
       type: "teatro" as const,
     },
   ];
@@ -153,15 +159,21 @@ const NuestrasSalasPage = () => {
                                     ? ONNIVERSE_OPEN_WESTCOL_URL
                                     : room.id === "selena-quintanilla"
                                       ? ONNIVERSE_OPEN_SELENA_URL
-                                      : room.id === "bad-bunny"
-                                        ? ONNIVERSE_OPEN_BAD_BUNNY_URL
-                                        : room.id === "beele"
+                                      : room.id === "arcangel"
+                                        ? ONNIVERSE_OPEN_ARCANGEL_URL
+                                        : room.id === "bad-bunny"
+                                          ? ONNIVERSE_OPEN_BAD_BUNNY_URL
+                                          : room.id === "beele"
                                           ? ONNIVERSE_OPEN_BEELE_URL
                                           : room.id === "xavi"
                                             ? ONNIVERSE_OPEN_XAVI_URL
                                             : room.id === "hablando-huevadas"
                                               ? ONNIVERSE_OPEN_HABLANDO_HUEVADAS_URL
-                                              : null;
+                                              : room.id === "michael-jackson"
+                                                ? ONNIVERSE_OPEN_MICHAEL_JACKSON_URL
+                                                : room.id === "daddy-yankee"
+                                                  ? ONNIVERSE_OPEN_DADDY_YANKEE_URL
+                                                  : null;
 
                 return (
                   <motion.div

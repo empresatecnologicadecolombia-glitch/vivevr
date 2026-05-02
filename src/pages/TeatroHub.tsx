@@ -43,13 +43,13 @@ const teatroRooms: TeatroRoom[] = [
     vip: false,
   },
   {
-    id: "vive-leyendas",
-    title: "Vive Leyendas",
-    country: "Canal Curado",
-    hosts: "Rescate de talentos iconicos",
-    description: "Espacio VIP para revivir personajes de TV y nuevas generaciones de artistas.",
-    image:
-      "https://images.unsplash.com/photo-1497032628192-86f99bcd76bc?auto=format&fit=crop&w=1400&q=80",
+    id: "michael-jackson",
+    title: "Michael Jackson",
+    country: "USA",
+    hosts: "El Rey del Pop",
+    description:
+      "Experiencia inmersiva con greatest hits, energía de tour y comunidad de fans en vivo.",
+    image: "/michael-jackson-avatar.png",
     vip: true,
   },
 ];
@@ -106,7 +106,7 @@ const TeatroHub = () => {
                     {room.vip && (
                       <span className="absolute left-3 top-3 inline-flex items-center gap-1 rounded-full bg-amber-400/90 px-2.5 py-1 text-[10px] font-display font-bold uppercase text-black">
                         <Crown className="h-3 w-3" />
-                        VIP Vive Leyendas
+                        VIP
                       </span>
                     )}
                   </div>
