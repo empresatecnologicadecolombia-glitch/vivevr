@@ -8,14 +8,12 @@ function MirrorSbsRoot() {
   const [vrMode, setVrMode] = useState(false);
   const [isFullscreen, setIsFullscreen] = useState(false);
   const [hasFrame, setHasFrame] = useState(false);
-  const lensMapRef = useRef<SVGFEDisplacementMapElement | null>(null);
   const sourceHostRef = useRef<HTMLDivElement | null>(null);
   const masterCanvasRef = useRef<HTMLCanvasElement | null>(null);
   const leftEyeCanvasRef = useRef<HTMLCanvasElement | null>(null);
   const rightEyeCanvasRef = useRef<HTMLCanvasElement | null>(null);
   const leftEyeRef = useRef<HTMLDivElement | null>(null);
   const rightEyeRef = useRef<HTMLDivElement | null>(null);
-  const VR_LENS_STRENGTH = 0.5;
 
   const toggleFullscreen = () => {
     const root = document.documentElement;
@@ -55,13 +53,6 @@ function MirrorSbsRoot() {
   }, []);
 
   useEffect(() => {
-    const map = lensMapRef.current;
-    if (!map) return;
-    // Match the user's shader scale intention in a DOM-safe filter.
-    map.setAttribute("scale", String(Math.max(0, Math.min(1.2, VR_LENS_STRENGTH)) * 44));
-  }, []);
-
-  useEffect(() => {
     document.body.classList.toggle("vr-mode-active", vrMode);
     return () => document.body.classList.remove("vr-mode-active");
   }, [vrMode]);
@@ -85,9 +76,13 @@ function MirrorSbsRoot() {
 
     let rafId = 0;
     let framePainted = false;
+    const targetCaptureFps = vrMode ? 24 : 60;
+    const minCaptureIntervalMs = 1000 / targetCaptureFps;
+    let lastCaptureAt = 0;
 
     const syncCanvasSize = (canvas: HTMLCanvasElement) => {
-      const dpr = Math.min(window.devicePixelRatio || 1, 2);
+      // VR stereo: force 1:1 pixels — prioritize FPS over sharpness (mirror capture path).
+      const dpr = vrMode ? 1 : Math.min(window.devicePixelRatio || 1, 2);
       const width = Math.max(2, Math.floor(canvas.clientWidth * dpr));
       const height = Math.max(2, Math.floor(canvas.clientHeight * dpr));
       if (canvas.width !== width || canvas.height !== height) {
@@ -96,11 +91,12 @@ function MirrorSbsRoot() {
       }
     };
 
+    /** Misma imagen 2D en ambos ojos: sin estéreo ni distorsión (espejo duplicado). */
     const drawEye = (ctx: CanvasRenderingContext2D, target: HTMLCanvasElement) => {
       ctx.fillStyle = "#000000";
       ctx.fillRect(0, 0, target.width, target.height);
       ctx.imageSmoothingEnabled = true;
-      ctx.imageSmoothingQuality = "high";
+      ctx.imageSmoothingQuality = vrMode ? "low" : "high";
       ctx.drawImage(masterCanvas, 0, 0, masterCanvas.width, masterCanvas.height, 0, 0, target.width, target.height);
     };
 
@@ -108,12 +104,19 @@ function MirrorSbsRoot() {
     const render = () => {
       syncCanvasSize(leftCanvas);
       syncCanvasSize(rightCanvas);
-      if (!captureInFlight) {
+      drawEye(leftCtx, leftCanvas);
+      drawEye(rightCtx, rightCanvas);
+
+      const now = performance.now();
+      const canCaptureNow = now - lastCaptureAt >= minCaptureIntervalMs;
+      if (!captureInFlight && canCaptureNow) {
         captureInFlight = true;
+        lastCaptureAt = now;
         void html2canvas(sourceHost, {
           backgroundColor: "#000000",
           useCORS: true,
-          scale: 1,
+          // In VR mirror mode we intentionally lower capture resolution for stable frame pacing.
+          scale: vrMode ? 0.5 : 1,
           logging: false,
         })
           .then((snapshot) => {
@@ -124,9 +127,6 @@ function MirrorSbsRoot() {
 
             masterCtx.clearRect(0, 0, masterCanvas.width, masterCanvas.height);
             masterCtx.drawImage(snapshot, 0, 0, masterCanvas.width, masterCanvas.height);
-            drawEye(leftCtx, leftCanvas);
-            drawEye(rightCtx, rightCanvas);
-
             if (!framePainted) {
               framePainted = true;
               setHasFrame(true);
@@ -292,43 +292,6 @@ function MirrorSbsRoot() {
 
   return (
     <div id="mirror-body" className={`${vrMode ? "sbs-active" : ""} ${vrMode && hasFrame ? "sbs-ready" : ""}`}>
-      <svg width="0" height="0" aria-hidden="true" focusable="false" className="vr-lens-defs">
-        <defs>
-          <radialGradient id="vrDistortionGradient" cx="50%" cy="50%" r="50%">
-            <stop offset="0%" stopColor="rgb(128,128,128)" />
-            <stop offset="65%" stopColor="rgb(170,170,128)" />
-            <stop offset="100%" stopColor="rgb(216,216,128)" />
-          </radialGradient>
-          <filter id="vr-distortion" x="-10%" y="-10%" width="120%" height="120%">
-            <feImage
-              href={`data:image/svg+xml;utf8,${encodeURIComponent(
-                '<svg xmlns="http://www.w3.org/2000/svg" width="1024" height="1024"><rect width="100%" height="100%" fill="url(%23vrDistortionGradient)"/><defs><radialGradient id="vrDistortionGradient" cx="50%" cy="50%" r="50%"><stop offset="0%" stop-color="rgb(128,128,128)"/><stop offset="65%" stop-color="rgb(170,170,128)"/><stop offset="100%" stop-color="rgb(216,216,128)"/></radialGradient></defs></svg>',
-              )}`}
-              x="0"
-              y="0"
-              width="100%"
-              height="100%"
-              result="lensMap"
-              preserveAspectRatio="none"
-            />
-            <feDisplacementMap
-              ref={lensMapRef}
-              in="SourceGraphic"
-              in2="lensMap"
-              scale="22"
-              xChannelSelector="R"
-              yChannelSelector="G"
-            />
-          </filter>
-        </defs>
-      </svg>
-      <button
-        type="button"
-        className="vr-probe-button"
-        onClick={() => setVrMode((prev) => !prev)}
-      >
-        {vrMode ? "SALIR VR MODE" : "VR MODE"}
-      </button>
       <button
         type="button"
         className="fullscreen-button"

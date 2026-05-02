@@ -2,6 +2,7 @@ import { OrbitControls } from "@react-three/drei";
 import { useLoader } from "@react-three/fiber";
 import * as THREE from "three";
 import { SRGBColorSpace, TextureLoader } from "three";
+import { OPTIMIZED_SPHERE_SEGMENTS } from "@/lib/webglRendererPrefs";
 
 export const SPHERE_RADIUS = 420;
 
@@ -20,7 +21,7 @@ export function EquirectangularInterior({
 
   return (
     <mesh {...meshProps}>
-      <sphereGeometry args={[SPHERE_RADIUS, 96, 64]} />
+      <sphereGeometry args={[SPHERE_RADIUS, OPTIMIZED_SPHERE_SEGMENTS, OPTIMIZED_SPHERE_SEGMENTS]} />
       <meshBasicMaterial map={texture} side={THREE.BackSide} depthWrite={false} />
     </mesh>
   );
@@ -31,7 +32,7 @@ export function ImmersiveOrbitControls() {
     <OrbitControls
       makeDefault
       enablePan={false}
-      enableZoom={false}
+      enableZoom
       enableDamping
       dampingFactor={0.055}
       rotateSpeed={0.28}
@@ -40,8 +41,8 @@ export function ImmersiveOrbitControls() {
       minAzimuthAngle={-Infinity}
       maxAzimuthAngle={Infinity}
       target={[0, 0, 0]}
-      minDistance={0.12}
-      maxDistance={0.12}
+      minDistance={0.08}
+      maxDistance={0.45}
     />
   );
 }

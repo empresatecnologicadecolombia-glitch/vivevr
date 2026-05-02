@@ -1,6 +1,7 @@
 import { useEffect } from "react";
 import { useLoader, useThree } from "@react-three/fiber";
 import * as THREE from "three";
+import { OPTIMIZED_SPHERE_SEGMENTS } from "@/lib/webglRendererPrefs";
 
 /** Radio interior > distancia maxima de orbita (12) para ver 360° sin salir de la esfera. */
 const INTERIOR_RADIUS = 28;
@@ -27,7 +28,7 @@ export function KidsSpaceEquirectSphere({ url }: { url: string }) {
 
   return (
     <mesh renderOrder={-2}>
-      <sphereGeometry args={[INTERIOR_RADIUS, 96, 64]} />
+      <sphereGeometry args={[INTERIOR_RADIUS, OPTIMIZED_SPHERE_SEGMENTS, OPTIMIZED_SPHERE_SEGMENTS]} />
       <meshBasicMaterial map={texture} side={THREE.BackSide} depthWrite />
     </mesh>
   );

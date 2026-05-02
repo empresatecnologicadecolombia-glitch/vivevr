@@ -11,6 +11,13 @@ import {
   SPHERE_RADIUS,
 } from "@/components/immersive/equirectSphereCore";
 import { type StreamerProfile } from "@/data/podcastStreamers";
+import {
+  MAX_WEBGL_PIXEL_RATIO,
+  OPTIMIZED_SPHERE_SEGMENTS,
+  applyPixelRatioCap,
+  isMobileCoarseDevice,
+} from "@/lib/webglRendererPrefs";
+import { useVrModeActive } from "@/hooks/useVrModeActive";
 
 type ReactionKind = "risas" | "aplausos" | "epico";
 
@@ -202,9 +209,52 @@ function VideoEquirectangularInterior({ url }: { url: string }) {
 
   return (
     <mesh>
-      <sphereGeometry args={[SPHERE_RADIUS, 96, 64]} />
+      <sphereGeometry args={[SPHERE_RADIUS, OPTIMIZED_SPHERE_SEGMENTS, OPTIMIZED_SPHERE_SEGMENTS]} />
       <meshBasicMaterial map={texture} side={THREE.BackSide} depthWrite={false} />
     </mesh>
+  );
+}
+
+function InlineVideoScreen({ url }: { url: string }) {
+  const { video, texture } = useMemo(() => {
+    const element = document.createElement("video");
+    element.src = url;
+    element.crossOrigin = "anonymous";
+    element.loop = true;
+    element.muted = true;
+    element.autoplay = true;
+    element.playsInline = true;
+    element.preload = "auto";
+    const videoTexture = new THREE.VideoTexture(element);
+    videoTexture.colorSpace = SRGBColorSpace;
+    videoTexture.minFilter = THREE.LinearFilter;
+    videoTexture.magFilter = THREE.LinearFilter;
+    videoTexture.generateMipmaps = false;
+    return { video: element, texture: videoTexture };
+  }, [url]);
+
+  useEffect(() => {
+    void video.play().catch(() => undefined);
+    const resume = () => void video.play().catch(() => undefined);
+    window.addEventListener("pointerdown", resume, { once: true });
+    window.addEventListener("touchstart", resume, { once: true });
+    return () => {
+      window.removeEventListener("pointerdown", resume);
+      window.removeEventListener("touchstart", resume);
+      texture.dispose();
+      video.pause();
+      video.src = "";
+      video.load();
+    };
+  }, [texture, video]);
+
+  return (
+    <group position={[0, 1.35, -8.6]}>
+      <mesh>
+        <planeGeometry args={[6.2, 3.48]} />
+        <meshBasicMaterial map={texture} toneMapped={false} side={THREE.DoubleSide} />
+      </mesh>
+    </group>
   );
 }
 
@@ -212,6 +262,7 @@ function SceneContent({
   streamer,
   embedUrl,
   videoIn360Background,
+  vrModeActive,
   onToggleVideoTarget,
   messages,
   chatInput,
@@ -224,6 +275,7 @@ function SceneContent({
   streamer: StreamerProfile;
   embedUrl: string;
   videoIn360Background: boolean;
+  vrModeActive: boolean;
   onToggleVideoTarget: () => void;
   messages: string[];
   chatInput: string;
@@ -248,7 +300,7 @@ function SceneContent({
 
 
 
-      {!videoIn360Background && (
+      {!videoIn360Background && !vrModeActive && (
         <Html position={[0, 1.35, -8.6]} transform distanceFactor={11} center style={{ width: "min(72vw, 620px)" }}>
           <div
             className="rounded-2xl border border-white/25 bg-black/50 p-2 shadow-[0_40px_120px_rgba(0,0,0,0.85)] backdrop-blur-md"
@@ -276,6 +328,7 @@ function SceneContent({
           </div>
         </Html>
       )}
+      {!videoIn360Background && vrModeActive && <InlineVideoScreen url={embedUrl} />}
 
       {videoIn360Background && (
         <Html position={[6.6, 4.05, -8.1]} transform distanceFactor={9.2}>
@@ -336,22 +389,26 @@ export default function PodcastImmersiveScene({
 }: PodcastImmersiveSceneProps) {
   const embedUrl = "/videos/beele.mp4";
   const [videoIn360Background, setVideoIn360Background] = useState(false);
+  const mobileCoarse = useMemo(() => isMobileCoarseDevice(), []);
+  const vrModeActive = useVrModeActive();
 
   const onPointerMissed = useCallback(() => {}, []);
 
   return (
     <div className="h-[100dvh] w-full touch-none bg-black [&_*]:outline-none" style={{ touchAction: "none" }}>
       <Canvas
-        gl={{ antialias: true, alpha: false, powerPreference: "high-performance" }}
+        gl={{ antialias: !mobileCoarse, alpha: false, powerPreference: "high-performance" }}
         camera={{ position: [0, 0, 0.12], fov: 84, far: SPHERE_RADIUS * 2 }}
         onPointerMissed={onPointerMissed}
-        dpr={[1, 2]}
+        dpr={[1, MAX_WEBGL_PIXEL_RATIO]}
+        onCreated={({ gl }) => applyPixelRatioCap(gl)}
       >
         <Suspense fallback={null}>
           <SceneContent
             streamer={streamer}
             embedUrl={embedUrl}
             videoIn360Background={videoIn360Background}
+            vrModeActive={vrModeActive}
             onToggleVideoTarget={() => setVideoIn360Background((prev) => !prev)}
             messages={messages}
             chatInput={chatInput}

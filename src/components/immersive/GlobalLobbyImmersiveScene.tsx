@@ -1,6 +1,6 @@
 import { Html } from "@react-three/drei";
 import { Canvas } from "@react-three/fiber";
-import { Suspense, useCallback } from "react";
+import { Suspense, useCallback, useMemo } from "react";
 import { Link } from "react-router-dom";
 import { ChevronLeft, ChevronRight, Pause, Play } from "lucide-react";
 import { Button } from "@/components/ui/button";
@@ -9,6 +9,11 @@ import {
   ImmersiveOrbitControls,
   SPHERE_RADIUS,
 } from "@/components/immersive/equirectSphereCore";
+import {
+  MAX_WEBGL_PIXEL_RATIO,
+  applyPixelRatioCap,
+  isMobileCoarseDevice,
+} from "@/lib/webglRendererPrefs";
 
 const LOBBY_PANORAMA =
   "https://images.unsplash.com/photo-1478760329108-5c3e1527712f?auto=format&fit=crop&w=4096&q=85";
@@ -129,14 +134,16 @@ export default function GlobalLobbyImmersiveScene({
   onNext,
 }: GlobalLobbyImmersiveSceneProps) {
   const onPointerMissed = useCallback(() => {}, []);
+  const mobileCoarse = useMemo(() => isMobileCoarseDevice(), []);
 
   return (
     <div className="h-[100dvh] w-full touch-none bg-black [&_*]:outline-none" style={{ touchAction: "none" }}>
       <Canvas
-        gl={{ antialias: true, alpha: false, powerPreference: "high-performance" }}
+        gl={{ antialias: !mobileCoarse, alpha: false, powerPreference: "high-performance" }}
         camera={{ position: [0, 0, 0.12], fov: 72, far: SPHERE_RADIUS * 2 }}
         onPointerMissed={onPointerMissed}
-        dpr={[1, 2]}
+        dpr={[1, MAX_WEBGL_PIXEL_RATIO]}
+        onCreated={({ gl }) => applyPixelRatioCap(gl)}
       >
         <Suspense fallback={null}>
           <LobbySceneContent

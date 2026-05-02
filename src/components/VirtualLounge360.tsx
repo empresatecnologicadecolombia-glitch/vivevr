@@ -2,6 +2,11 @@ import { Suspense, useMemo } from "react";
 import { Canvas, useLoader, useThree } from "@react-three/fiber";
 import { OrbitControls } from "@react-three/drei";
 import { EquirectangularReflectionMapping, SRGBColorSpace, TextureLoader } from "three";
+import {
+  MAX_WEBGL_PIXEL_RATIO,
+  applyPixelRatioCap,
+  isMobileCoarseDevice,
+} from "@/lib/webglRendererPrefs";
 
 interface VirtualLounge360Props {
   backgroundImage: string;
@@ -75,9 +80,16 @@ const VirtualLounge360 = ({
   layout = "circle",
   className,
 }: VirtualLounge360Props) => {
+  const mobileCoarse = useMemo(() => isMobileCoarseDevice(), []);
+
   return (
     <div className={className}>
-      <Canvas camera={{ position: [0, 1.6, 0.2], fov: 75 }}>
+      <Canvas
+        camera={{ position: [0, 1.6, 0.2], fov: 75 }}
+        dpr={[1, MAX_WEBGL_PIXEL_RATIO]}
+        gl={{ antialias: !mobileCoarse, alpha: false }}
+        onCreated={({ gl }) => applyPixelRatioCap(gl)}
+      >
         <Suspense fallback={null}>
           <PanoramaBackground url={backgroundImage} />
         </Suspense>

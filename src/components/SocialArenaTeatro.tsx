@@ -10,6 +10,11 @@ import {
 } from "react";
 import type { ReactNode } from "react";
 import * as THREE from "three";
+import {
+  MAX_WEBGL_PIXEL_RATIO,
+  applyPixelRatioCap,
+  isMobileCoarseDevice,
+} from "@/lib/webglRendererPrefs";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 
@@ -541,13 +546,16 @@ export default function SocialArenaTeatro({
   onChatInput,
   onSend,
 }: SocialArenaTeatroProps) {
+  const mobileCoarse = useMemo(() => isMobileCoarseDevice(), []);
+
   return (
     <div className={className}>
       <Canvas
-        shadows
-        gl={{ antialias: true, alpha: false }}
+        gl={{ antialias: !mobileCoarse, alpha: false }}
         camera={{ position: ZONE_PRESETS.default.pos, fov: 55, near: 0.1, far: 200 }}
+        dpr={[1, MAX_WEBGL_PIXEL_RATIO]}
         onCreated={({ gl }) => {
+          applyPixelRatioCap(gl);
           gl.toneMapping = THREE.ACESFilmicToneMapping;
           gl.toneMappingExposure = 1.05;
         }}
