@@ -24,9 +24,8 @@ export interface StreamerProfile {
 export const podcastStreamers: StreamerProfile[] = [
   {
     id: "nova-byte",
-    name: "Nova Byte",
-    avatar:
-      "https://images.unsplash.com/photo-1494790108377-be9c29b29330?auto=format&fit=crop&w=640&q=80",
+    name: "KarolG",
+    avatar: "/karolg-avatar.png",
     immersiveSalaName: "Sala Cuántica",
     panoramaImage:
       "https://images.unsplash.com/photo-1635070041078-e363dbe005cb?auto=format&fit=crop&w=4096&q=85",
