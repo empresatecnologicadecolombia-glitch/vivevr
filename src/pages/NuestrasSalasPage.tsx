@@ -42,6 +42,8 @@ const SectionHeader = ({
 const NuestrasSalasPage = () => {
   const ONNIVERSE_OPEN_KAROL_URL =
     "onniverso://open?url=https://res.cloudinary.com/dfsabdxup/video/upload/v1777737430/karol_eund2g.mp4";
+  const ONNIVERSE_OPEN_SILVESTRE_URL =
+    "onniverso://open?url=https://res.cloudinary.com/dfsabdxup/video/upload/v1777748643/Silvestre_hxjmdi.mp4";
 
   const creatorRooms = [
     ...podcastStreamers.map((streamer) => ({
@@ -206,7 +208,12 @@ const NuestrasSalasPage = () => {
             />
             <div className="grid gap-6 sm:grid-cols-2 lg:grid-cols-4">
               {creatorRooms.map((room, index) => {
-                const isNovaByte = room.id === "nova-byte";
+                const onniverseAppHref =
+                  room.id === "nova-byte"
+                    ? ONNIVERSE_OPEN_KAROL_URL
+                    : room.id === "axon-king"
+                      ? ONNIVERSE_OPEN_SILVESTRE_URL
+                      : null;
 
                 return (
                   <motion.div
@@ -216,9 +223,9 @@ const NuestrasSalasPage = () => {
                     viewport={{ once: true, margin: "-60px" }}
                     transition={{ delay: index * 0.06 }}
                   >
-                    {isNovaByte ? (
+                    {onniverseAppHref != null ? (
                       <a
-                        href={ONNIVERSE_OPEN_KAROL_URL}
+                        href={onniverseAppHref}
                         className="group block rounded-2xl border border-border/50 bg-card/40 p-5 backdrop-blur-xl transition-all duration-500 hover:-translate-y-1 hover:border-primary/50 hover:shadow-[0_0_45px_-10px_hsl(var(--primary)/0.5)]"
                       >
                         <div className="relative mb-4 overflow-hidden rounded-xl border border-primary/20">
