@@ -40,8 +40,8 @@ const SectionHeader = ({
 );
 
 const NuestrasSalasPage = () => {
-  const NOVA_ANDROID_INTENT_URL =
-    "intent://open?url=https://res.cloudinary.com/dfsabdxup/video/upload/v1777737430/karol_eund2g.mp4#Intent;scheme=eluniverso;package=com.example.androidestudioh;end";
+  const ONNIVERSE_OPEN_KAROL_URL =
+    "onniverso://open?url=https://res.cloudinary.com/dfsabdxup/video/upload/v1777737430/karol_eund2g.mp4";
 
   const creatorRooms = [
     ...podcastStreamers.map((streamer) => ({
@@ -218,7 +218,7 @@ const NuestrasSalasPage = () => {
                   >
                     {isNovaByte ? (
                       <a
-                        href={NOVA_ANDROID_INTENT_URL}
+                        href={ONNIVERSE_OPEN_KAROL_URL}
                         className="group block rounded-2xl border border-border/50 bg-card/40 p-5 backdrop-blur-xl transition-all duration-500 hover:-translate-y-1 hover:border-primary/50 hover:shadow-[0_0_45px_-10px_hsl(var(--primary)/0.5)]"
                       >
                         <div className="relative mb-4 overflow-hidden rounded-xl border border-primary/20">
